@@ -1,1 +1,1760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QenAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,800;1,900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    background: #080818;
+    font-family: 'Poppins', sans-serif;
+    color: white;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.5); border-radius: 3px; }
+
+/* Orbs */
+#bg-orbs { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.15; }
+.orb-1 { background: #7c3aed; width: 600px; height: 600px; top: -100px; left: -100px; animation: float1 20s infinite alternate ease-in-out; }
+.orb-2 { background: #2563eb; width: 500px; height: 500px; bottom: -100px; right: -100px; animation: float2 25s infinite alternate ease-in-out; }
+.orb-3 { background: #ec4899; width: 400px; height: 400px; top: -50px; right: 100px; animation: float3 18s infinite alternate ease-in-out; }
+.orb-4 { background: #06b6d4; width: 350px; height: 350px; bottom: 50px; left: 100px; animation: float4 22s infinite alternate ease-in-out; }
+
+@keyframes float1 { 0% { transform: translate(0, 0); } 100% { transform: translate(100px, 50px); } }
+@keyframes float2 { 0% { transform: translate(0, 0); } 100% { transform: translate(-100px, -50px); } }
+@keyframes float3 { 0% { transform: translate(0, 0); } 100% { transform: translate(-50px, 100px); } }
+@keyframes float4 { 0% { transform: translate(0, 0); } 100% { transform: translate(80px, -80px); } }
+
+/* Main layout z-index */
+#app-container { position: relative; z-index: 1; }
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 { font-weight: 700; }
+.gradient-text {
+    background: linear-gradient(135deg, #7c3aed, #2563eb);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+}
+.gradient-text-sec {
+    background: linear-gradient(135deg, #ec4899, #7c3aed);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Glassmorphism */
+.glass {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.10);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+/* Buttons */
+.btn {
+    border: none; cursor: pointer; color: white;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600; font-size: 1rem;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-primary {
+    background: linear-gradient(135deg, #7c3aed, #2563eb);
+    border-radius: 12px;
+    padding: 12px 24px;
+    box-shadow: 0 0 20px rgba(124,58,237,0.4);
+    transition: all 0.3s ease;
+}
+.btn-primary:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(124,58,237,0.6);
+}
+.btn-primary:disabled {
+    background: #4b5563;
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.btn-secondary {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 12px 24px;
+    transition: all 0.3s ease;
+}
+.btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,0.1); transform: scale(1.02); }
+
+.btn-danger-outline {
+    background: transparent; color: #ef4444; border: 1px solid #ef4444; border-radius: 12px; padding: 12px 24px; transition: all 0.3s;
+}
+.btn-danger-outline:hover { background: rgba(239,68,68,0.1); transform: scale(1.02); }
+
+/* Inputs */
+.input-wrap { position: relative; width: 100%; margin-bottom: 16px; }
+.input-wrap .lucide { position: absolute; left: 16px; top: 14px; width: 20px; height: 20px; color: rgba(255,255,255,0.5); }
+.input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: white;
+    outline: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+.input-wrap .input { padding-left: 48px; }
+.input:focus {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.2);
+}
+.input.error { border-color: #ef4444; animation: shake 0.4s; }
+.input[disabled] { opacity: 0.6; cursor: not-allowed; }
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.error-text { color: #ef4444; font-size: 0.8rem; margin-top: -12px; margin-bottom: 16px; display: block; }
+label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: rgba(255,255,255,0.8); }
+
+/* Toasts */
+#toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+    background: #080818; color: white; padding: 12px 16px; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid;
+    display: flex; align-items: center; gap: 12px; font-size: 0.9rem;
+    animation: slideInRight 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+.toast-success { border-left-color: #10b981; }
+.toast-error { border-left-color: #ef4444; }
+.toast-info { border-left-color: #2563eb; }
+.toast.fade-out { animation: fadeOut 0.3s forwards; }
+
+@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes fadeOut { to { opacity: 0; transform: translateY(-10px); } }
+
+/* Modals */
+.modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    z-index: 1000; display: none; align-items: center; justify-content: center; padding: 16px;
+    opacity: 0; transition: opacity 0.3s;
+}
+.modal-overlay.active { display: flex; opacity: 1; }
+.modal-content {
+    width: 100%; transform: scale(0.85); transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    max-height: 90vh; overflow-y: auto; padding: 24px; position: relative;
+}
+.modal-overlay.active .modal-content { transform: scale(1); }
+.modal-close { position: absolute; top: 16px; right: 16px; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; border: none; color: white; }
+.modal-close:hover { background: rgba(255,255,255,0.1); transform: rotate(90deg); color: #ef4444; }
+.divider { height: 1px; background: rgba(255,255,255,0.1); margin: 20px 0; }
+
+/* Loader */
+#global-loader { position: fixed; inset: 0; background: rgba(8,8,24,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; }
+.spinner {
+    width: 50px; height: 50px; border-radius: 50%;
+    border: 4px solid rgba(255,255,255,0.1);
+    border-top-color: #7c3aed;
+    animation: rotateArc 0.8s linear infinite;
+}
+@keyframes rotateArc { to { transform: rotate(360deg); } }
+
+/* Navigation */
+nav {
+    position: fixed; top: 0; left: 0; width: 100%; height: 64px; z-index: 100;
+    background: rgba(8,8,24,0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+}
+.nav-logo { font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.nav-actions { display: flex; align-items: center; gap: 12px; position: relative; }
+.avatar-circle { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #2563eb); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; cursor: pointer; text-transform: uppercase; font-size: 1.1rem; }
+.dropdown {
+    position: absolute; top: 52px; right: 0; min-width: 200px; padding: 8px;
+    display: none; transform: translateY(-10px); opacity: 0; transition: all 0.3s;
+}
+.dropdown.active { display: block; transform: translateY(0); opacity: 1; }
+.dropdown-item { padding: 10px 16px; border-radius: 8px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s; color: white; font-weight: 500; font-size: 0.95rem; }
+.dropdown-item:hover { background: rgba(255,255,255,0.05); }
+.dropdown-item.danger:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
+
+/* Views */
+.view { display: none; padding-top: 80px; min-height: 100vh; padding-bottom: 40px; opacity: 0; transform: translateY(20px); transition: all 0.4s ease; }
+.view.active { display: block; opacity: 1; transform: translateY(0); }
+
+/* Utility Classes */
+.text-center { text-align: center; }
+.w-full { width: 100%; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-4 { margin-bottom: 16px; }
+.mb-6 { margin-bottom: 24px; }
+.mt-4 { margin-top: 16px; }
+.p-6 { padding: 24px; }
+.hidden { display: none !important; }
+.pointer { cursor: pointer; }
+
+/* Product Cards */
+.products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; padding: 24px; }
+.product-card {
+    min-height: 280px; display: flex; flex-direction: column; position: relative;
+    transition: all 0.3s ease; opacity: 0; transform: translateY(20px); animation: fadeInUp 0.5s forwards;
+}
+.product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 60px rgba(124,58,237,0.3); border-color: rgba(124,58,237,0.5); }
+.pc-top { height: 120px; background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(37,99,235,0.1)); border-radius: 20px 20px 0 0; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.pc-letter { position: absolute; font-size: 64px; font-weight: 800; opacity: 0.3; color: white; }
+.pc-title-overlay { z-index: 2; font-weight: 700; font-size: 1.2rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); text-align: center; padding: 0 16px; }
+.pc-mid { padding: 16px; flex: 1; display: flex; flex-direction: column; }
+.pc-name { font-weight: 700; font-size: 18px; margin-bottom: 4px; }
+.pc-price { font-size: 1.1rem; color: #10b981; font-weight: 600; }
+.pc-bulk { font-size: 0.8rem; color: #f59e0b; margin-top: 4px; }
+.pc-stock { position: absolute; top: 12px; right: 12px; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; z-index: 3; }
+.stock-green { background: rgba(16,185,129,0.2); color: #10b981; border: 1px solid rgba(16,185,129,0.4); }
+.stock-red { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.4); }
+
+@keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+
+/* Admin Sidebar Layout */
+#view-admin { padding-top: 64px; display: none; }
+#view-admin.active { display: flex; }
+.admin-sidebar { width: 260px; height: calc(100vh - 64px); position: fixed; left: 0; top: 64px; background: rgba(8,8,24,0.95); border-right: 1px solid rgba(255,255,255,0.08); padding: 20px 12px; overflow-y: auto; z-index: 90; transition: transform 0.3s; }
+.admin-content { margin-left: 260px; flex: 1; padding: 24px; min-height: calc(100vh - 64px); overflow-y: auto; overflow-x: hidden;}
+.admin-menu-item { padding: 12px 20px; border-radius: 10px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; color: rgba(255,255,255,0.6); font-weight: 600; margin-bottom: 4px; }
+.admin-menu-item:hover { background: rgba(255,255,255,0.05); color: white; }
+.admin-menu-item.active { background: linear-gradient(135deg, #7c3aed, #2563eb); box-shadow: 0 4px 15px rgba(124,58,237,0.3); color: white; }
+
+/* Admin Panels */
+.admin-panel { display: none; animation: fadeIn 0.4s; }
+.admin-panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Stat Cards */
+.stat-card { padding: 20px; position: relative; overflow: hidden; transition: 0.3s; }
+.stat-card:hover { transform: translateY(-4px); }
+.stat-icon { position: absolute; top: 20px; right: 20px; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; }
+.stat-icon.purple { background: linear-gradient(135deg, #a855f7, #6b21a8); }
+.stat-icon.blue { background: linear-gradient(135deg, #60a5fa, #1d4ed8); }
+.stat-icon.green { background: linear-gradient(135deg, #34d399, #047857); }
+.stat-icon.yellow { background: linear-gradient(135deg, #fbbf24, #b45309); }
+.stat-val { font-size: 2.5rem; font-weight: 800; margin-top: 10px; }
+.stat-lbl { color: rgba(255,255,255,0.6); font-weight: 600; font-size: 0.9rem; }
+
+/* Table styles */
+.styled-table-wrap { overflow-x: auto; margin-top: 16px; }
+.styled-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+.styled-table th { text-align: left; padding: 12px 16px; color: rgba(255,255,255,0.6); font-size: 0.85rem; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.styled-table td { padding: 16px; background: rgba(255,255,255,0.02); }
+.styled-table tr td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; border-left: 1px solid rgba(255,255,255,0.05); }
+.styled-table tr td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-right: 1px solid rgba(255,255,255,0.05); }
+.styled-table td.top { border-top: 1px solid rgba(255,255,255,0.05); }
+.styled-table td.bot { border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+/* Dynamic List / Rows */
+.acc-list-row { background: rgba(255,255,255,0.03); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+
+/* Radio Cards */
+.radio-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.radio-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; transition: 0.2s; }
+.radio-card.active { border-color: #7c3aed; background: linear-gradient(to bottom, rgba(124,58,237,0.2), transparent); }
+
+.file-upload-area { border: 2px dashed rgba(255,255,255,0.2); border-radius: 12px; padding: 32px; text-align: center; cursor: pointer; transition: 0.2s; background: rgba(255,255,255,0.02); }
+.file-upload-area:hover { border-color: #7c3aed; background: rgba(124,58,237,0.05); }
+
+/* Overrides for mobile */
+@media (max-width: 768px) {
+    .admin-sidebar { transform: translateX(-100%); width: 260px; }
+    .admin-sidebar.show { transform: translateX(0); }
+    .admin-content { margin-left: 0; }
+    #admin-hamburger { display: block !important; }
+    .products-grid { grid-template-columns: 1fr; }
+    .radio-cards { grid-template-columns: 1fr; }
+}
+/* Password Strength */
+.strength-bar { height: 4px; border-radius: 2px; background: rgba(255,255,255,0.1); margin-top: -10px; margin-bottom: 16px; overflow: hidden; }
+.strength-fill { height: 100%; width: 0; transition: all 0.3s; }
+</style>
+</head>
+<body>
+
+<div id="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
+</div>
+
+<div id="global-loader">
+    <div class="spinner"></div>
+    <p class="mt-4" style="font-weight: 600; letter-spacing: 1px;" id="loader-text">Memproses...</p>
+</div>
+
+<div id="toast-container"></div>
+
+<div id="app-container">
+    <nav>
+        <div class="nav-logo" onclick="handleLogoClick()">
+            <i data-lucide="store" style="color: #7c3aed;"></i>
+            <span class="gradient-text">QenAI</span>
+        </div>
+        <div class="nav-actions" id="nav-actions">
+            <!-- Dynamic Nav -->
+        </div>
+    </nav>
+
+    <!-- VIEWS -->
+    
+    <!-- LOGIN -->
+    <div id="view-login" class="view">
+        <div class="glass" style="max-width: 420px; margin: 0 auto; padding: 32px;">
+            <div class="text-center mb-6">
+                <i data-lucide="lock" class="w-12 h-12 mx-auto mb-2" style="color: #7c3aed;"></i>
+                <h2 class="gradient-text">QenAI</h2>
+                <p style="color: rgba(255,255,255,0.6); margin-top: 4px;">Masuk ke akun Anda</p>
+            </div>
+            <form onsubmit="handleUserLogin(event)" id="login-form">
+                <div class="input-wrap">
+                    <i data-lucide="at-sign"></i>
+                    <input type="text" id="log-user" class="input" placeholder="Username" required>
+                </div>
+                <div class="input-wrap">
+                    <i data-lucide="lock"></i>
+                    <input type="password" id="log-pass" class="input" placeholder="Password" required>
+                    <button type="button" style="position:absolute; right:16px; top:12px; background:none; border:none; color:rgba(255,255,255,0.5); cursor:pointer;" onclick="togglePass('log-pass', this)"><i data-lucide="eye"></i></button>
+                </div>
+                <button type="submit" class="btn btn-primary w-full mt-4" id="btn-login-submit">Masuk</button>
+            </form>
+            <p class="text-center mt-4" style="font-size: 0.9rem;">Belum punya akun? <span class="gradient-text pointer" onclick="navigate('register')">Daftar</span></p>
+        </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="view-register" class="view">
+         <div class="glass" style="max-width: 480px; margin: 0 auto; padding: 32px;">
+            <div class="text-center mb-6">
+                <h2 class="gradient-text">QenAI</h2>
+                <p style="color: rgba(255,255,255,0.6); margin-top: 4px;">Buat akun baru</p>
+            </div>
+            <form onsubmit="handleRegister(event)" id="register-form">
+                <div class="input-wrap">
+                    <i data-lucide="user"></i>
+                    <input type="text" id="reg-name" class="input" placeholder="Nama Lengkap">
+                    <span class="error-text hidden" id="err-reg-name">Nama tidak boleh kosong</span>
+                </div>
+                <div class="input-wrap">
+                    <i data-lucide="at-sign"></i>
+                    <input type="text" id="reg-user" class="input" placeholder="Username">
+                    <span class="error-text hidden" id="err-reg-user">Username tidak valid. Gunakan huruf angka dan underscore saja.</span>
+                </div>
+                <div class="input-wrap">
+                    <i data-lucide="phone"></i>
+                    <input type="number" id="reg-wa" class="input" placeholder="WhatsApp Number">
+                    <span class="error-text hidden" id="err-reg-wa">Nomor WA minimal 10 digit</span>
+                </div>
+                <div class="input-wrap">
+                    <i data-lucide="lock"></i>
+                    <input type="password" id="reg-pass" class="input" placeholder="Password (min 8 karakter)" onkeyup="checkStrength()">
+                    <button type="button" style="position:absolute; right:16px; top:12px; background:none; border:none; color:rgba(255,255,255,0.5); cursor:pointer;" onclick="togglePass('reg-pass', this)"><i data-lucide="eye"></i></button>
+                </div>
+                <div class="strength-bar"><div class="strength-fill" id="pass-strength"></div></div>
+                <span class="error-text hidden" id="err-reg-pass">Password minimal 8 karakter</span>
+
+                <div class="input-wrap">
+                    <i data-lucide="lock"></i>
+                    <input type="password" id="reg-pass-conf" class="input" placeholder="Konfirmasi Password" onkeyup="checkMatch()">
+                    <button type="button" style="position:absolute; right:40px; top:12px; background:none; border:none; color:rgba(255,255,255,0.5); cursor:pointer;" onclick="togglePass('reg-pass-conf', this)"><i data-lucide="eye"></i></button>
+                    <i data-lucide="check" id="match-icon" style="position:absolute; right:16px; top:14px; color:#10b981; display:none;"></i>
+                </div>
+                <span class="error-text hidden" id="err-reg-pass-conf">Password tidak cocok</span>
+
+                <button type="submit" class="btn btn-primary w-full mt-4" id="btn-reg-submit">Daftar Akun</button>
+            </form>
+            <p class="text-center mt-4" style="font-size: 0.9rem;">Sudah punya akun? <span class="gradient-text pointer" onclick="navigate('login')">Login</span></p>
+         </div>
+    </div>
+
+    <!-- STOREFRONT -->
+    <div id="view-storefront" class="view">
+        <div style="padding: 40px 24px; text-align: center; max-width: 800px; margin: 0 auto;">
+            <h1 class="gradient-text" style="font-size: 3rem; margin-bottom: 8px;">QenAI</h1>
+            <p style="font-size: 1.2rem; color: rgba(255,255,255,0.7); font-weight: 300;">Automated Digital Account Store</p>
+            <div style="display:inline-block; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #10b981; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-top: 16px;">
+                <i data-lucide="zap" class="w-4 h-4 inline" style="vertical-align:-3px; margin-right:4px;"></i> Instant delivery via QRIS
+            </div>
+            
+            <div class="flex justify-center gap-4 mt-6">
+                <div class="glass" style="padding: 12px 24px; text-align:center;">
+                    <h3 id="hero-prod-count" class="gradient-text" style="font-size:2rem;">0</h3>
+                    <p style="font-size: 0.8rem; color: rgba(255,255,255,0.5); text-transform: uppercase;">Produk</p>
+                </div>
+                <div class="glass" style="padding: 12px 24px; text-align:center;">
+                    <h3 id="hero-order-count" class="gradient-text-sec" style="font-size:2rem;">0</h3>
+                    <p style="font-size: 0.8rem; color: rgba(255,255,255,0.5); text-transform: uppercase;">Transaksi</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 24px;">
+            <h2 style="font-size: 1.5rem; margin-bottom: 16px; display:inline-block; border-bottom: 3px solid #7c3aed; padding-bottom: 8px;">Produk Tersedia</h2>
+            <div id="products-list-grid" class="products-grid">
+                <!-- Products -->
+            </div>
+        </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div id="view-profile" class="view">
+        <div class="glass" style="max-width: 600px; margin: 0 auto; padding: 32px; position:relative;">
+            <button class="btn btn-secondary" style="position:absolute; top:24px; left:24px; padding: 8px; border-radius: 50%;" onclick="navigate('storefront')"><i data-lucide="arrow-left"></i></button>
+            
+            <div class="text-center" style="margin-top: 20px;">
+                <div style="width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #ec4899, #7c3aed); margin: 0 auto 16px; display:flex; align-items:center; justify-content:center; font-size: 40px; font-weight: 800; color:white;" id="prof-ava">A</div>
+                <h2 class="gradient-text" style="font-size: 24px;" id="prof-name">Name</h2>
+                <p style="color: rgba(255,255,255,0.6);" id="prof-user">@username</p>
+                <p style="color: rgba(255,255,255,0.4); font-size: 0.85rem; margin-top: 8px;" id="prof-since">Bergabung sejak ...</p>
+            </div>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 32px;" id="prof-info-cards">
+                <div class="glass" style="padding: 16px;"><i data-lucide="at-sign" style="color:#06b6d4; margin-bottom:8px;"></i><p style="font-size:0.8rem; color:rgba(255,255,255,0.5);">Username</p><p id="prof-user-val" style="font-weight:600;"></p></div>
+                <div class="glass" style="padding: 16px;"><i data-lucide="phone" style="color:#ec4899; margin-bottom:8px;"></i><p style="font-size:0.8rem; color:rgba(255,255,255,0.5);">WhatsApp</p><p id="prof-wa-val" style="font-weight:600;"></p></div>
+                <div class="glass" style="padding: 16px;"><i data-lucide="shield" style="color:#10b981; margin-bottom:8px;"></i><p style="font-size:0.8rem; color:rgba(255,255,255,0.5);">Role</p><p id="prof-role-val" style="font-weight:600;"></p></div>
+            </div>
+
+            <!-- Edit Form (Hidden by default) -->
+            <div id="prof-edit-form-wrap" class="hidden" style="margin-top: 32px;">
+                <form onsubmit="saveProfile(event)" id="edit-prof-form">
+                    <label>Nama Lengkap</label>
+                    <input type="text" id="ep-name" class="input" required>
+                    <label>Username</label>
+                    <input type="text" id="ep-user" class="input" required>
+                    <label>WhatsApp</label>
+                    <input type="number" id="ep-wa" class="input" required>
+                    <div class="flex gap-2 mt-4">
+                        <button type="button" class="btn btn-secondary w-full" onclick="toggleEditProfile(false)">Batal</button>
+                        <button type="submit" class="btn btn-primary w-full" style="background: linear-gradient(135deg, #10b981, #047857);" id="btn-ep-save">Simpan Perubahan</button>
+                    </div>
+                </form>
+            </div>
+
+            <button id="btn-enter-edit" class="btn btn-primary w-full mt-6" onclick="toggleEditProfile(true)"><i data-lucide="edit-3"></i> Edit Profile</button>
+        </div>
+    </div>
+
+    <!-- ORDER HISTORY -->
+    <div id="view-history" class="view">
+        <div style="max-width: 800px; margin: 0 auto; padding: 0 24px;">
+            <div class="flex items-center gap-4 mb-6">
+                <button class="btn btn-secondary" style="padding: 8px; border-radius: 50%;" onclick="navigate('storefront')"><i data-lucide="arrow-left"></i></button>
+                <h2 class="gradient-text" style="font-size: 2rem;">Riwayat Pesanan</h2>
+            </div>
+            <div id="history-list" class="flex flex-col gap-4">
+                <!-- Orders -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN -->
+    <div id="view-admin" class="view" style="padding-top:64px; min-height:100vh;">
+        <div class="admin-sidebar" id="admin-sidebar">
+            <div class="mb-8 px-2">
+                <h2 class="gradient-text" style="font-size: 1.5rem;">QenAI</h2>
+                <p style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">Admin Panel</p>
+            </div>
+            <div class="admin-menu-item active" onclick="switchAdmin('dashboard')"><i data-lucide="grid"></i> Dashboard</div>
+            <div class="admin-menu-item" onclick="switchAdmin('products')"><i data-lucide="package"></i> Produk</div>
+            <div class="admin-menu-item" onclick="switchAdmin('add-product')"><i data-lucide="plus-circle"></i> Tambah Produk</div>
+            <div class="admin-menu-item" onclick="switchAdmin('orders')"><i data-lucide="shopping-bag"></i> Semua Order</div>
+            <div class="admin-menu-item" onclick="switchAdmin('harga')"><i data-lucide="tag"></i> Set Harga</div>
+            <div class="admin-menu-item" onclick="switchAdmin('saldo')"><i data-lucide="wallet"></i> Cek Saldo</div>
+            <div style="margin-top: auto; padding-top: 40px;">
+                <div class="admin-menu-item" style="color:#ef4444;" onclick="logoutAdmin()"><i data-lucide="log-out"></i> Keluar</div>
+            </div>
+        </div>
+
+        <div class="admin-content" id="adm-content" style="padding-top: 80px;">
+            <button id="admin-hamburger" class="btn btn-secondary" style="position:fixed; top:80px; left:20px; z-index:80; display:none;" onclick="document.getElementById('admin-sidebar').classList.add('show')"><i data-lucide="menu"></i> Menu Admin</button>
+            <div id="admin-close-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:85; display:none;" onclick="document.getElementById('admin-sidebar').classList.remove('show'); this.style.display='none';"></div>
+
+            <!-- Dashboard -->
+            <div id="adm-dashboard" class="admin-panel active">
+                <h2 class="mb-6">Dashboard Admin</h2>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+                    <div class="glass stat-card">
+                        <div class="stat-icon purple"><i data-lucide="package"></i></div>
+                        <p class="stat-lbl">Total Produk</p>
+                        <h3 class="stat-val" id="adm-stat-prod">0</h3>
+                    </div>
+                    <div class="glass stat-card">
+                        <div class="stat-icon blue"><i data-lucide="layers"></i></div>
+                        <p class="stat-lbl">Total Stok</p>
+                        <h3 class="stat-val" id="adm-stat-stok">0</h3>
+                    </div>
+                    <div class="glass stat-card">
+                        <div class="stat-icon green"><i data-lucide="shopping-cart"></i></div>
+                        <p class="stat-lbl">Total Order</p>
+                        <h3 class="stat-val" id="adm-stat-order">0</h3>
+                    </div>
+                    <div class="glass stat-card">
+                        <div class="stat-icon yellow"><i data-lucide="wallet"></i></div>
+                        <p class="stat-lbl">Saldo API</p>
+                        <h3 class="stat-val" style="font-size:1.8rem; margin-top:20px;" id="adm-stat-saldo">Rp 0</h3>
+                    </div>
+                </div>
+                <h3 class="mt-4 mb-2">Order Terakhir</h3>
+                <div class="glass styled-table-wrap">
+                    <table class="styled-table"><tbody id="adm-recent-orders"></tbody></table>
+                </div>
+            </div>
+
+            <!-- Products -->
+            <div id="adm-products" class="admin-panel">
+                <div class="flex justify-between items-center mb-6">
+                    <h2>Kelola Produk</h2>
+                    <button class="btn btn-primary" onclick="switchAdmin('add-product')"><i data-lucide="plus"></i> Tambah Produk</button>
+                </div>
+                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px,1fr)); gap:20px;" id="adm-prod-grid"></div>
+            </div>
+
+            <!-- Add Product -->
+            <div id="adm-add-product" class="admin-panel">
+                <div class="glass" style="max-width: 700px; margin: 0 auto; padding: 32px;">
+                    <h2 class="gradient-text mb-6">Tambah Produk Baru</h2>
+                    <form onsubmit="submitNewProduct(event)">
+                        <div class="input-wrap">
+                            <i data-lucide="package"></i>
+                            <input type="text" id="ap-name" class="input" placeholder="Contoh: Netflix Premium" required>
+                        </div>
+                        
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                            <div>
+                                <label>Harga Normal (per akun)</label>
+                                <div class="input-wrap">
+                                    <i data-lucide="tag"></i>
+                                    <input type="number" id="ap-normal" class="input" value="5500" required>
+                                </div>
+                                <p style="font-size:0.75rem; color:rgba(255,255,255,0.5); margin-top:-10px;">Berlaku di bawah 15 akun</p>
+                            </div>
+                            <div>
+                                <label>Harga Bulk (per akun)</label>
+                                <div class="input-wrap">
+                                    <i data-lucide="tag"></i>
+                                    <input type="number" id="ap-bulk" class="input" value="700" required>
+                                </div>
+                                <p style="font-size:0.75rem; color:rgba(255,255,255,0.5); margin-top:-10px;">Berlaku >= 15 akun</p>
+                            </div>
+                        </div>
+
+                        <label class="mt-4 mb-2">Tutorial Type</label>
+                        <div class="radio-cards mb-4">
+                            <div class="radio-card active" onclick="setTutorialType('text')" id="rt-text"><i data-lucide="file-text" class="mx-auto mb-2 text-purple-400"></i><p>Teks</p></div>
+                            <div class="radio-card" onclick="setTutorialType('image')" id="rt-image"><i data-lucide="image" class="mx-auto mb-2 text-blue-400"></i><p>Foto</p></div>
+                            <div class="radio-card" onclick="setTutorialType('video')" id="rt-video"><i data-lucide="video" class="mx-auto mb-2 text-pink-400"></i><p>Video</p></div>
+                        </div>
+
+                        <div id="ap-tut-text" class="mb-6">
+                            <textarea id="ap-text-val" class="input" rows="6" placeholder="Tulis tutorial cara login di sini..."></textarea>
+                        </div>
+                        
+                        <div id="ap-tut-img" class="mb-6 hidden">
+                            <div class="file-upload-area" onclick="document.getElementById('ap-file-img').click()">
+                                <i data-lucide="upload-cloud" class="mx-auto mb-2 w-10 h-10" style="color:rgba(255,255,255,0.5)"></i>
+                                <p>Klik atau drag foto tutorial</p>
+                                <input type="file" id="ap-file-img" accept="image/*" class="hidden" onchange="previewImg(this, 'ap-img-prev')">
+                            </div>
+                            <img id="ap-img-prev" class="mt-4 hidden" style="max-width:100%; border-radius:12px;">
+                        </div>
+
+                        <div id="ap-tut-vid" class="mb-6 hidden">
+                            <div style="display:grid; grid-template-columns: 1fr 20px 1fr; gap:16px; align-items:center;">
+                                <div class="file-upload-area" onclick="document.getElementById('ap-file-vid').click()" style="padding: 20px;">
+                                    <i data-lucide="upload" class="mx-auto mb-2"></i>
+                                    <p style="font-size:0.85rem;">Upload Video</p>
+                                    <input type="file" id="ap-file-vid" accept="video/*" class="hidden" onchange="previewText(this, 'ap-vid-lbl')">
+                                    <p id="ap-vid-lbl" style="font-size:0.7rem; margin-top:8px; color:#10b981;"></p>
+                                </div>
+                                <div style="text-align:center; color:rgba(255,255,255,0.4); font-weight:700;">OR</div>
+                                <div>
+                                    <input type="text" id="ap-link-vid" class="input" placeholder="https://youtube.com/...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="divider"></div>
+
+                        <div class="flex justify-between items-center mb-4">
+                            <label style="margin:0;">Daftar Akun <span style="background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:10px; font-size:0.75rem;" id="ap-acc-count">3</span></label>
+                        </div>
+                        
+                        <div class="glass" style="padding:8px; background:rgba(0,0,0,0.3);">
+                            <div style="display:grid; grid-template-columns: 40px 1fr 1fr 40px; gap:8px; padding:0 8px 8px 8px; border-bottom:1px solid rgba(255,255,255,0.1); font-size:0.8rem; color:rgba(255,255,255,0.6); font-weight:600;">
+                                <div>No</div><div>Email</div><div>Link / Password</div><div></div>
+                            </div>
+                            <div id="ap-rows"></div>
+                        </div>
+
+                        <button type="button" class="btn w-full mt-4" style="background:transparent; border:2px dashed rgba(255,255,255,0.2);" onclick="addApRow()"><i data-lucide="plus"></i> Tambah Baris Akun</button>
+                        <p class="text-center mt-2" style="font-size:0.8rem; color:rgba(255,255,255,0.4);">Format yang benar: Email dan Link/Password harus diisi</p>
+
+                        <button type="submit" class="btn btn-primary w-full mt-6" id="btn-ap-save" style="font-size:1.1rem; padding:16px;"><i data-lucide="save"></i> Simpan Produk</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Orders Admin -->
+            <div id="adm-orders" class="admin-panel">
+                <h2 class="mb-6">Semua Order <span id="adm-all-ord-count" style="background:rgba(255,255,255,0.1); padding:4px 12px; border-radius:20px; font-size:1rem; vertical-align:middle;">0</span></h2>
+                <div id="adm-order-list" class="flex flex-col gap-4"></div>
+            </div>
+
+            <!-- Set Harga -->
+            <div id="adm-harga" class="admin-panel">
+                <h2 class="mb-6">Set Harga Produk</h2>
+                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(350px,1fr)); gap:20px;" id="adm-harga-grid"></div>
+            </div>
+
+            <!-- Cek Saldo -->
+            <div id="adm-saldo" class="admin-panel">
+                <div class="glass text-center" style="max-width:500px; margin: 40px auto; padding: 40px;">
+                    <i data-lucide="wallet" class="mx-auto mb-4 w-16 h-16" style="color: #f59e0b;"></i>
+                    <h2 class="gradient-text mb-2">Saldo API FelixPedia</h2>
+                    <p style="color:rgba(255,255,255,0.6);" id="saldo-time">Terakhir dicek: -</p>
+                    <h1 style="font-size: 3rem; font-weight:800; margin: 24px 0;" id="saldo-val-big">Rp 0</h1>
+                    <button class="btn btn-primary w-full" onclick="loadSaldo(true)"><i data-lucide="refresh-cw"></i> Refresh Saldo</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- MODALS -->
+
+<!-- Order / quantity selector -->
+<div class="modal-overlay" id="order-modal">
+    <div class="glass modal-content" style="max-width: 480px;">
+        <button class="modal-close" onclick="hideModal('order-modal')"><i data-lucide="x"></i></button>
+        <h2 class="gradient-text mb-4" id="om-title">Nama Produk</h2>
+        <div class="divider"></div>
+        
+        <div id="om-step-1">
+            <div class="text-center mb-6">
+                <label style="color:white; font-size:1rem;">Jumlah Akun</label>
+                <div class="flex justify-center items-center gap-4 mt-2">
+                    <button class="btn" style="width:48px;height:48px;border-radius:50%;background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);border-radius:50%;color:#ef4444;" id="om-min" onclick="changeQty(-1)"><i data-lucide="minus"></i></button>
+                    <div id="om-qty" class="gradient-text" style="font-size:48px; font-weight:800; min-width:80px; text-align:center;">1</div>
+                    <button class="btn" style="width:48px;height:48px;border-radius:50%;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);border-radius:50%;color:#10b981;" id="om-plus" onclick="changeQty(1)"><i data-lucide="plus"></i></button>
+                </div>
+                <p id="om-unit-price" style="color:rgba(255,255,255,0.6); font-size:0.9rem; margin-top:8px;">Rp 5.500 per akun</p>
+            </div>
+
+            <div style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); border-radius:10px; padding:10px 16px; margin-bottom:16px; display:flex; align-items:center; gap:12px;">
+                <i data-lucide="alert-triangle" style="color:#f59e0b;"></i>
+                <p style="font-size:0.85rem; color:#fcd34d;" id="om-warn">Beli 15 akun atau lebih, harga spesial Rp 700/akun!</p>
+            </div>
+
+            <div style="background:rgba(124,58,237,0.1); border:1px solid rgba(124,58,237,0.3); border-radius:12px; padding:16px; margin-bottom:24px;">
+                <div class="flex justify-between mb-2"><span style="color:rgba(255,255,255,0.7);">Harga per akun</span><span id="om-sum-unit">Rp 0</span></div>
+                <div class="flex justify-between mb-2"><span style="color:rgba(255,255,255,0.7);">Jumlah</span><span id="om-sum-qty">0 akun</span></div>
+                <div class="divider" style="margin: 10px 0;"></div>
+                <div class="flex justify-between align-center">
+                    <span style="font-weight:700; font-size:1.1rem;">Total Pembayaran</span>
+                    <span class="gradient-text" style="font-weight:800; font-size:1.5rem;" id="om-total">Rp 0</span>
+                </div>
+            </div>
+
+            <label>Data Pembeli</label>
+            <div class="input-wrap">
+                <i data-lucide="user"></i>
+                <input type="text" id="om-name" class="input" placeholder="Nama Pembeli">
+            </div>
+            <div class="input-wrap">
+                <i data-lucide="phone"></i>
+                <input type="text" id="om-contact" class="input" placeholder="WhatsApp / Username">
+            </div>
+
+            <button class="btn btn-primary w-full mt-2" onclick="startPayment()"><i data-lucide="qr-code"></i> Bayar via QRIS</button>
+            <p class="text-center mt-3" style="font-size:0.8rem; color:rgba(255,255,255,0.5);"><i data-lucide="shield-check" class="w-4 h-4 inline" style="vertical-align:-3px;"></i> Pembayaran aman via QRIS</p>
+        </div>
+
+        <div id="om-step-2" class="hidden text-center">
+            <h3 class="mb-4">Scan QRIS</h3>
+            <div style="background:white; padding:16px; border-radius:16px; display:inline-block; margin-bottom:16px;">
+                <img id="om-qr-img" style="width:250px; height:250px;">
+            </div>
+            <h2 class="gradient-text mb-2" id="om-pay-amount">Rp 0</h2>
+            <p style="color:rgba(255,255,255,0.4); font-size:0.85rem; font-family:monospace;" id="om-dep-id">ID: -</p>
+            
+            <div class="mt-4 flex items-center justify-center gap-2" style="color:#f59e0b; font-weight:600;">
+                <div style="width:10px;height:10px;background:#f59e0b;border-radius:50%;animation:pulse 1.5s infinite;"></div> Menunggu pembayaran...
+            </div>
+            <h1 class="mt-2" style="font-variant-numeric: tabular-nums; letter-spacing:2px;" id="om-timer">10:00</h1>
+            <p class="text-center mt-2 hidden" style="color:#ef4444; font-weight:600;" id="om-timeout">Waktu habis, silakan order ulang.</p>
+
+            <button class="btn btn-secondary w-full mt-6" onclick="cancelPayment()">Batalkan</button>
+        </div>
+
+        <div id="om-step-3" class="hidden text-center">
+            <div style="width:80px;height:80px;background:rgba(16,185,129,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);">
+                <i data-lucide="check" style="color:#10b981; width:40px; height:40px;"></i>
+            </div>
+            <h2 class="gradient-text mb-2" style="background: linear-gradient(135deg, #10b981, #047857); -webkit-background-clip: text;">Pembayaran Berhasil!</h2>
+            <p style="color:rgba(255,255,255,0.7); margin-bottom: 24px;">Akun Anda sudah siap</p>
+
+            <div style="text-align:left; max-height:200px; overflow-y:auto; padding-right:8px;" id="om-succ-accs">
+                <!-- accounts -->
+            </div>
+            
+            <button class="btn w-full mt-4 mb-4" style="background:rgba(255,255,255,0.1);" onclick="copyOmAccs()"><i data-lucide="copy"></i> Copy All Accounts</button>
+            
+            <div style="text-align:left;" id="om-succ-tut">
+                <label style="color:#7c3aed; font-weight:700;">Cara Login:</label>
+                <div id="om-tut-content" class="mt-2 text-sm"></div>
+            </div>
+
+            <button class="btn btn-primary w-full mt-6" onclick="hideModal('order-modal')">Tutup & Selesai</button>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes popIn { 0% { transform: scale(0); } 80% { transform: scale(1.1); } 100% { transform: scale(1); } }
+@keyframes pulse { 0% { opacity:1; } 50% { opacity:0.3; } 100% { opacity:1; } }
+</style>
+
+<!-- Admin Login Modal -->
+<div class="modal-overlay" id="admin-login-modal">
+    <div class="glass modal-content" style="max-width: 360px; text-align:center;">
+        <i data-lucide="shield" class="w-12 h-12 mx-auto mb-4" style="color: #7c3aed;"></i>
+        <h2 class="mb-6">Login Admin</h2>
+        <div class="input-wrap text-left">
+            <i data-lucide="user"></i>
+            <input type="text" id="al-user" class="input" placeholder="Username">
+        </div>
+        <div class="input-wrap text-left mb-6">
+            <i data-lucide="lock"></i>
+            <input type="password" id="al-pass" class="input" placeholder="Password">
+        </div>
+        <div class="flex gap-2">
+            <button class="btn btn-secondary w-full" onclick="hideModal('admin-login-modal')">Batal</button>
+            <button class="btn btn-primary w-full" id="btn-al-submit" onclick="submitAdminLogin()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Tambah Stok Modal -->
+<div class="modal-overlay" id="tambah-stok-modal">
+    <div class="glass modal-content" style="max-width: 600px;">
+        <button class="modal-close" onclick="hideModal('tambah-stok-modal')"><i data-lucide="x"></i></button>
+        <h2 class="gradient-text mb-4" id="ts-title">Tambah Stok</h2>
+        <p style="font-size:0.85rem; color:rgba(255,255,255,0.5); margin-bottom:16px;">Maksimal 50 baris sekaligus.</p>
+        
+        <div id="ts-rows" style="max-height: 40vh; overflow-y:auto; padding-right:8px; margin-bottom:16px;"></div>
+        
+        <button class="btn w-full mb-6" style="background:transparent; border:2px dashed rgba(255,255,255,0.2);" onclick="addTsRow()"><i data-lucide="plus"></i> Tambah Baris</button>
+        <button class="btn btn-primary w-full" id="btn-ts-save" onclick="saveStok()"><i data-lucide="save"></i> Simpan Stok</button>
+    </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="modal-overlay" id="confirm-modal">
+    <div class="glass modal-content" style="max-width: 400px; text-align:center;">
+        <i data-lucide="alert-triangle" class="w-16 h-16 mx-auto mb-4" style="color:#ef4444;"></i>
+        <h2 class="mb-2" id="cm-title">Hapus Produk?</h2>
+        <p style="color:rgba(255,255,255,0.7); font-size:0.9rem; margin-bottom:24px;" id="cm-text">Warning.</p>
+        <div class="flex gap-2">
+            <button class="btn btn-secondary w-full" onclick="hideModal('confirm-modal')">Batalkan</button>
+            <button class="btn w-full" style="background: linear-gradient(135deg, #ef4444, #b91c1c);" id="btn-cm-confirm">Hapus Sekarang</button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+/* ================= FIREBASE INIT ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyB2NhU6ECMyzV2aJNG1kjeVIXiN2TqKPto",
+  authDomain: "qenai.firebaseapp.com",
+  projectId: "qenai",
+  storageBucket: "qenai.firebasestorage.app",
+  messagingSenderId: "812349114314",
+  appId: "1:812349114314:web:52cc77d1d806ffec223133",
+  measurementId: "G-NJWYG8GHFP"
+};
+
+// Error handling & Connectivity Flag
+let isFirestoreAvailable = false;
+let isFirebaseVerified = false;
+
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const originalDb = firebase.firestore();
+const auth = firebase.auth();
+const storage = firebase.storage();
+
+/* ================= FIREBASE VALIDATION ================= */
+async function verifyFirebaseConnection() {
+    if (isFirebaseVerified) return isFirestoreAvailable;
+    try {
+        if (!firebase.apps.length) throw new Error("Firebase App Not Initialized");
+        // Verify database existence with a dummy read
+        await originalDb.collection('_setup_check').doc('1').get();
+        isFirestoreAvailable = true;
+    } catch (error) {
+        if (error.code === 'not-found' || (error.message && error.message.includes('not-found'))) {
+            console.warn("⚠️ Firestore Database not found or inactive. Entering safe mode.", error);
+            showErrorToast("Database Firestore tidak ditemukan. Fitur database dimatikan.");
+        } else if (error.code === 'permission-denied') {
+            // Still active, just permission denied
+            isFirestoreAvailable = true;
+        } else if (error.code === 'unavailable') {
+            console.warn("⚠️ Firestore is unavailable. Offline mode or connection issues.", error);
+            isFirestoreAvailable = true; // Can operate offline potentially
+        } else {
+            console.error("Firebase Verification Error:", error);
+            showErrorToast("Gagal terhubung ke database.");
+            isFirestoreAvailable = false;
+        }
+    }
+    isFirebaseVerified = true;
+    return isFirestoreAvailable;
+}
+
+// Proxied DB for safe usage
+const db = {
+    collection: function(path) {
+        if (isFirebaseVerified && !isFirestoreAvailable) {
+            console.warn(`[SafeMode] Ignored DB request to /${path}`);
+            return _createMockCollection(path);
+        }
+        return originalDb.collection(path);
+    },
+    batch: function() {
+        if (isFirebaseVerified && !isFirestoreAvailable) {
+            return { update: () => {}, set: () => {}, delete: () => {}, commit: () => Promise.resolve() };
+        }
+        return originalDb.batch();
+    }
+};
+
+function _createMockCollection(path) {
+    return {
+        doc: (id) => ({
+            get: () => Promise.resolve({ exists: false, data: () => ({}), id: id || 'mock-id' }),
+            set: () => Promise.resolve(),
+            update: () => Promise.resolve(),
+            delete: () => Promise.resolve(),
+            collection: (sub) => _createMockCollection(`${path}/${id}/${sub}`)
+        }),
+        get: () => Promise.resolve({ docs: [], size: 0, empty: true, forEach: () => {} }),
+        where: () => _createMockCollection(path),
+        orderBy: () => _createMockCollection(path),
+        limit: () => _createMockCollection(path),
+        onSnapshot: (cb) => { setTimeout(() => cb({ docs: [], size: 0, empty: true, forEach: () => {} }), 0); return () => {}; },
+        add: () => Promise.resolve({ id: 'mock-id' })
+    };
+}
+
+
+/* ================= GLOBALS ================= */
+lucide.createIcons();
+let currentUser = null;
+let currentRole = null;
+let currentView = "";
+let productsListener = null;
+let allProducts = [];
+let currentOrderProd = null;
+let orderQty = 1;
+let qrPoll = null;
+let qrTimer = null;
+let currentDepId = null;
+let currentDelivered = "";
+
+/* ================= UTILS ================= */
+function showToast(msg, type='success') {
+    const cont = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = 'toast toast-' + type;
+    t.innerHTML = `<i data-lucide="${type==='success'?'check-circle':type==='error'?'x-circle':'info'}"></i> <span>${msg}</span>`;
+    cont.appendChild(t);
+    lucide.createIcons();
+    setTimeout(() => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 300); }, 3000);
+}
+function formatRp(num) { return "Rp " + num.toLocaleString('id-ID'); }
+function showLoader(text="Memproses...", show=true) {
+    document.getElementById('loader-text').innerText = text;
+    document.getElementById('global-loader').style.display = show ? 'flex' : 'none';
+}
+function hideLoader() { showLoader("", false); }
+function togglePass(id, btn) {
+    const el = document.getElementById(id);
+    if(el.type === 'password') { el.type = 'text'; btn.innerHTML='<i data-lucide="eye-off"></i>'; }
+    else { el.type = 'password'; btn.innerHTML='<i data-lucide="eye"></i>'; }
+    lucide.createIcons();
+}
+function showModal(id) { document.getElementById(id).classList.add('active'); lucide.createIcons(); }
+function hideModal(id) { document.getElementById(id).classList.remove('active'); }
+
+/* ================= NAV & ROUTES ================= */
+let logoClickCount = 0;
+let logoClickTimer = null;
+
+function handleLogoClick() {
+  logoClickCount++;
+  if (logoClickTimer) clearTimeout(logoClickTimer);
+  logoClickTimer = setTimeout(() => {
+    if (logoClickCount >= 3) {
+      showModal('admin-login-modal');
+      showToast('Mode Admin diaktifkan', 'info');
+    } else {
+      navigate('storefront');
+    }
+    logoClickCount = 0;
+  }, 800);
+}
+
+function navigate(view) {
+    document.querySelectorAll('.view').forEach(v => {
+        v.style.display = 'none';
+        v.classList.remove('active');
+    });
+    const target = document.getElementById('view-' + view);
+    if(target) {
+        target.style.display = 'block';
+        setTimeout(() => { target.classList.add('active'); }, 50);
+    }
+    currentView = view;
+    if(view === 'storefront') loadStorefront();
+    if(view === 'history') loadHistory();
+    if(view === 'profile') loadProfileView();
+    if(view === 'admin') loadAdminData();
+    window.scrollTo(0,0);
+}
+
+function updateNav() {
+    const act = document.getElementById('nav-actions');
+    if (currentUser) {
+        if(currentRole === 'admin') {
+            act.innerHTML = `<div class="flex items-center gap-2"><div style="background:linear-gradient(135deg,#10b981,#047857); padding:6px 12px; border-radius:20px; font-size:0.8rem; font-weight:700;" class="flex items-center gap-2 pointer" onclick="navigate('admin')"><i data-lucide="shield"></i> Admin</div></div>`;
+        } else {
+            let initial = currentUser.fullName ? currentUser.fullName.charAt(0) : 'U';
+            act.innerHTML = `<div style="position:relative;">
+                <div class="avatar-circle" onclick="toggleDropdown()">${initial}</div>
+                <div class="glass dropdown" id="nav-drop">
+                    <div class="dropdown-item" onclick="navigate('profile'); toggleDropdown()"><i data-lucide="user"></i> Profil Saya</div>
+                    <div class="dropdown-item" onclick="navigate('history'); toggleDropdown()"><i data-lucide="clock"></i> Riwayat Pesanan</div>
+                    <div class="divider" style="margin:5px 0;"></div>
+                    <div class="dropdown-item danger" onclick="userLogout()"><i data-lucide="log-out"></i> Keluar</div>
+                </div>
+            </div>`;
+        }
+    } else {
+        act.innerHTML = `<button class="btn btn-danger-outline" onclick="navigate('login')" style="padding:8px 16px;">Login</button>
+                         <button class="btn btn-primary" onclick="navigate('register')" style="padding:8px 16px;">Daftar</button>`;
+    }
+    lucide.createIcons();
+}
+function toggleDropdown() { document.getElementById('nav-drop').classList.toggle('active'); }
+document.addEventListener('click', (e) => {
+    if(document.getElementById('nav-drop') && !e.target.closest('.nav-actions')) document.getElementById('nav-drop').classList.remove('active');
+});
+
+/* ================= INITIAL LOAD ================= */
+window.addEventListener('load', async () => {
+    // Check db connectivity to prevent crash
+    await verifyFirebaseConnection();
+    if(!document.querySelector('.view.active')) navigate('storefront');
+});
+
+auth.onAuthStateChanged(async (user) => {
+    await verifyFirebaseConnection();
+    if (user) {
+        currentUser = user;
+        try {
+            const doc = await db.collection('users').doc(user.uid).get();
+            if(doc.exists) {
+                const d = doc.data();
+                currentUser.role = d.role;
+                currentUser.fullName = d.fullName;
+                currentUser.whatsapp = d.whatsapp;
+                currentUser.username = d.username;
+                currentRole = d.role;
+                console.log("User loaded:", currentRole);
+            }
+        } catch(e) {}
+        updateNav();
+        
+        let curView = document.querySelector('.view.active')?.id.replace('view-', '') || currentView;
+        if(curView === 'login' || curView === 'register' || curView === '') {
+            if(currentRole === 'admin') { 
+                navigate('admin'); 
+                switchAdmin('dashboard'); 
+            } else { 
+                navigate('storefront'); 
+            }
+        }
+    } else {
+        currentUser = null; currentRole = null;
+        updateNav();
+        if(localStorage.getItem('qenAdminSession') === 'true') {
+            currentRole = 'admin';
+            updateNav();
+            if(currentView===''||currentView==='login'||currentView==='register') { navigate('admin'); switchAdmin('dashboard'); }
+        } else {
+            if(currentView==='') navigate('login');
+        }
+    }
+});
+
+/* ================= AUTH LOGIC ================= */
+function checkStrength() {
+    let p = document.getElementById('reg-pass').value;
+    let s = 0; if(p.length>=8) s++; if(/[A-Z]/.test(p)) s++; if(/[0-9]/.test(p)) s++;
+    let f = document.getElementById('pass-strength');
+    if(p.length===0) { f.style.width='0'; return; }
+    if(s===1) { f.style.width='33%'; f.style.background='#ef4444'; }
+    else if(s===2) { f.style.width='66%'; f.style.background='#f59e0b'; }
+    else { f.style.width='100%'; f.style.background='#10b981'; }
+    checkMatch();
+}
+function checkMatch() {
+    let p1 = document.getElementById('reg-pass').value;
+    let p2 = document.getElementById('reg-pass-conf').value;
+    let i = document.getElementById('match-icon');
+    if(p2.length>0 && p1===p2) i.style.display='block'; else i.style.display='none';
+}
+function showError(id, show) {
+    let el = document.getElementById('err-'+id); let inp = document.getElementById(id);
+    if(show) { el.classList.remove('hidden'); inp.classList.add('error'); setTimeout(()=>inp.classList.remove('error'), 400); }
+    else { el.classList.add('hidden'); inp.classList.remove('error'); }
+}
+async function handleRegister(e) {
+    e.preventDefault();
+    let n=document.getElementById('reg-name').value.trim();
+    let u=document.getElementById('reg-user').value.trim();
+    let w=document.getElementById('reg-wa').value.trim();
+    let p1=document.getElementById('reg-pass').value;
+    let p2=document.getElementById('reg-pass-conf').value;
+    
+    let valid=true;
+    if(!n) { showError('reg-name', true); valid=false; } else showError('reg-name', false);
+    const userRegex = /^[a-zA-Z0-9_]+$/;
+    if(!u || !userRegex.test(u)) { showError('reg-user', true); valid=false; } else showError('reg-user', false);
+    if(!w || isNaN(w) || w.length<10) { showError('reg-wa', true); valid=false; } else showError('reg-wa', false);
+    if(p1.length<8) { showError('reg-pass', true); valid=false; } else showError('reg-pass', false);
+    if(p1!==p2) { showError('reg-pass-conf', true); valid=false; } else showError('reg-pass-conf', false);
+    
+    if(!valid) return;
+    
+    let generatedEmail = u + '@qenstore.user';
+    
+    let btn = document.getElementById('btn-reg-submit'); btn.disabled=true;
+    showLoader("Membuat akun...");
+    try {
+        const cred = await auth.createUserWithEmailAndPassword(generatedEmail, p1);
+        await db.collection('users').doc(cred.user.uid).set({
+            fullName: n, username: u, whatsapp: w, email: generatedEmail, uid: cred.user.uid, role: 'user',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast('Akun berhasil dibuat! Silakan login.', 'success');
+        document.getElementById('register-form').reset();
+        navigate('login');
+    } catch(err) {
+        console.error("Registration error:", err);
+        showToast(err.message, 'error');
+    } finally { btn.disabled=false; hideLoader(); }
+}
+
+async function handleUserLogin(e) {
+    e.preventDefault();
+    let user = document.getElementById('log-user').value.trim();
+    let pw = document.getElementById('log-pass').value;
+    let btn = document.getElementById('btn-login-submit'); btn.disabled=true;
+    let generatedEmail = user + '@qenstore.user';
+    showLoader("Masuk...");
+    try {
+        await auth.signInWithEmailAndPassword(generatedEmail, pw);
+        document.getElementById('login-form').reset();
+    } catch(err) {
+        console.error("Login error:", err);
+        showToast("Username atau password salah. Periksa kembali.", 'error');
+    } finally { btn.disabled=false; hideLoader(); }
+}
+
+async function userLogout() {
+    showLoader("Keluar...");
+    await auth.signOut();
+    hideLoader();
+}
+
+function submitAdminLogin() {
+    let u = document.getElementById('al-user'); let p = document.getElementById('al-pass');
+    if(u.value === 'qen' && p.value === 'qen1701') {
+        localStorage.setItem('qenAdminSession', 'true');
+        hideModal('admin-login-modal');
+        currentRole = 'admin'; updateNav();
+        navigate('admin'); switchAdmin('dashboard');
+        u.value=''; p.value='';
+    } else {
+        u.classList.add('error'); p.classList.add('error');
+        setTimeout(()=>{u.classList.remove('error'); p.classList.remove('error')}, 400);
+        showToast("Username atau password salah", "error");
+    }
+}
+function logoutAdmin() {
+    localStorage.removeItem('qenAdminSession');
+    currentRole=null; updateNav(); auth.signOut();
+    navigate('login');
+}
+
+/* ================= STOREFRONT ================= */
+function loadStorefront() {
+    if(productsListener) productsListener();
+    productsListener = db.collection('products').onSnapshot(snap => {
+        allProducts = []; let c=0;
+        const grid = document.getElementById('products-list-grid'); grid.innerHTML='';
+        if(snap.empty) {
+            grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding: 40px; color:rgba(255,255,255,0.5);"><i data-lucide="inbox" style="width:64px;height:64px;margin:0 auto 16px;opacity:0.5;"></i><p>Belum ada produk tersedia</p></div>`;
+            lucide.createIcons(); document.getElementById('hero-prod-count').innerText='0'; return;
+        }
+        snap.forEach((doc, idx) => {
+            c++; const p = {id: doc.id, ...doc.data()}; allProducts.push(p);
+            let sBadge = p.stock > 0 ? `<span class="pc-stock stock-green">Stok: ${p.stock}</span>` : `<span class="pc-stock stock-red">Habis</span>`;
+            let btn = p.stock > 0 
+                ? `<button class="btn btn-primary w-full" onclick="openOrder('${p.id}')">Beli Sekarang</button>`
+                : `<button class="btn btn-primary w-full" disabled>Stok Habis</button>`;
+            let init = p.name.charAt(0).toUpperCase();
+
+            let delay = (idx * 0.1) + 's';
+            grid.innerHTML += `
+                <div class="glass product-card" style="animation-delay:${delay};">
+                    ${sBadge}
+                    <div class="pc-top">
+                        <div class="pc-letter">${init}</div>
+                        <div class="pc-title-overlay">${p.name.substring(0,30)}</div>
+                    </div>
+                    <div class="pc-mid">
+                        <h3 class="pc-name">${p.name}</h3>
+                        <p class="pc-price">${formatRp(p.price_normal)} / akun</p>
+                        ${p.stock>0 ? `<p class="pc-bulk">Beli 15+ hanya ${formatRp(p.price_bulk)}/akun</p>` : ''}
+                        <div style="flex:1;"></div>
+                        <div style="margin-top:20px;">${btn}</div>
+                    </div>
+                </div>
+            `;
+        });
+        document.getElementById('hero-prod-count').innerText = c;
+        lucide.createIcons();
+    });
+    // Stats order snapshot
+    db.collection('orders').onSnapshot(snap => {
+        document.getElementById('hero-order-count').innerText = snap.size;
+    });
+}
+
+/* ================= PAYMENT FLOW ================= */
+const API_URL = "https://felixpedia.orderhostid.my.id/api";
+async function callApi(path, body) {
+    const res = await fetch(API_URL + path, { method: 'POST', headers: {"x-api-key": "fp_15ziwkf920rw16ar6", "Content-Type": "application/json"}, body: JSON.stringify(body) });
+    return await res.json();
+}
+
+function openOrder(id) {
+    let p = allProducts.find(x=>x.id===id); if(!p) return;
+    currentOrderProd = p; orderQty = 1;
+    document.getElementById('om-title').innerText = p.name;
+    document.getElementById('om-qty').innerText = 1;
+    document.getElementById('om-unit-price').innerText = `${formatRp(p.price_normal)} per akun`;
+    document.getElementById('om-warn').innerText = `Beli 15 akun atau lebih, harga spesial ${formatRp(p.price_bulk)}/akun!`;
+    document.getElementById('om-warn').parentElement.style.display = p.stock >= 15 ? 'flex' : 'none';
+    
+    if(currentUser && currentUser.fullName) {
+        document.getElementById('om-name').value = currentUser.fullName;
+        document.getElementById('om-contact').value = currentUser.whatsapp || currentUser.email;
+    } else {
+        document.getElementById('om-name').value = '';
+        document.getElementById('om-contact').value = '';
+    }
+    
+    calcOmTotal();
+    document.getElementById('om-min').disabled = true; document.getElementById('om-min').style.opacity='0.4';
+    document.getElementById('om-plus').disabled = p.stock<=1 ? true : false;
+    document.getElementById('om-plus').style.opacity = p.stock<=1 ? '0.4' : '1';
+
+    document.getElementById('om-step-1').classList.remove('hidden');
+    document.getElementById('om-step-2').classList.add('hidden');
+    document.getElementById('om-step-3').classList.add('hidden');
+    showModal('order-modal');
+}
+function changeQty(n) {
+    if(!currentOrderProd) return;
+    orderQty += n;
+    if(orderQty < 1) orderQty = 1;
+    if(orderQty > currentOrderProd.stock) orderQty = currentOrderProd.stock;
+    document.getElementById('om-qty').innerText = orderQty;
+    
+    document.getElementById('om-min').disabled = orderQty===1;
+    document.getElementById('om-min').style.opacity = orderQty===1 ? '0.4' : '1';
+    document.getElementById('om-plus').disabled = orderQty===currentOrderProd.stock;
+    document.getElementById('om-plus').style.opacity = orderQty===currentOrderProd.stock ? '0.4' : '1';
+    
+    let u = orderQty>=15 ? currentOrderProd.price_bulk : currentOrderProd.price_normal;
+    document.getElementById('om-unit-price').innerText = `${formatRp(u)} per akun`;
+    calcOmTotal();
+}
+function calcOmTotal() {
+    let u = orderQty>=15 ? currentOrderProd.price_bulk : currentOrderProd.price_normal;
+    document.getElementById('om-sum-unit').innerText = formatRp(u);
+    document.getElementById('om-sum-qty').innerText = orderQty + ' akun';
+    document.getElementById('om-total').innerText = formatRp(u * orderQty);
+}
+
+async function startPayment() {
+    let nm = document.getElementById('om-name').value.trim();
+    let co = document.getElementById('om-contact').value.trim();
+    if(!nm || !co) return showToast("Mohon isi data pembeli", "error");
+    
+    showLoader("Membuat transaksi QRIS...");
+    let u = orderQty>=15 ? currentOrderProd.price_bulk : currentOrderProd.price_normal;
+    let total = u * orderQty;
+
+    try {
+        const res = await callApi('/deposit/create', {amount: total});
+        if(res && res.deposit && res.deposit.id) {
+            currentDepId = res.deposit.id;
+            document.getElementById('om-qr-img').src = res.deposit.qr_image;
+            document.getElementById('om-pay-amount').innerText = formatRp(total);
+            document.getElementById('om-dep-id').innerText = 'ID: ' + currentDepId;
+            document.getElementById('om-step-1').classList.add('hidden');
+            document.getElementById('om-step-2').classList.remove('hidden');
+            
+            // Timer 10 minutes
+            document.getElementById('om-timeout').classList.add('hidden');
+            let t=600;
+            qrTimer = setInterval(() => {
+                t--; let m=Math.floor(t/60); let s=t%60;
+                document.getElementById('om-timer').innerText = m.toString().padStart(2,'0')+':'+s.toString().padStart(2,'0');
+                if(t<=0) { cancelPayment(true); }
+            }, 1000);
+
+            qrPoll = setInterval(checkPaymentAuto, 5000);
+        } else throw new Error("Gagal generate QRIS");
+    } catch(e) { showToast(e.message, 'error'); }
+    hideLoader();
+}
+
+function cancelPayment(isTimeout=false) {
+    if(qrTimer) clearInterval(qrTimer);
+    if(qrPoll) clearInterval(qrPoll);
+    if(isTimeout) { document.getElementById('om-timeout').classList.remove('hidden'); }
+    else { hideModal('order-modal'); }
+}
+
+async function checkPaymentAuto() {
+    try {
+        const res = await callApi('/deposit/status', {deposit_id: currentDepId});
+        if(res && res.status === 'success') {
+            if(qrPoll) clearInterval(qrPoll);
+            if(qrTimer) clearInterval(qrTimer);
+            await processSuccessOrder();
+        }
+    } catch(e) {}
+}
+
+async function processSuccessOrder() {
+    showLoader("Menyiapkan akun...");
+    try {
+        const snap = await db.collection('products').doc(currentOrderProd.id).collection('accounts').where('sold','==',false).limit(orderQty).get();
+        if(snap.size < orderQty) throw new Error("Stok tidak cukup, harap hubungi Admin.");
+
+        let batch = db.batch();
+        let accsData = []; let plainTxt = "";
+        for(let i=0; i<snap.docs.length; i++) {
+            let doc = snap.docs[i];
+            let d = doc.data(); accsData.push(d);
+            plainTxt+= `Email: ${d.email}\nPW Masuk: ${d.link}\n\n`;
+            batch.update(doc.ref, { sold:true, sold_at: firebase.firestore.FieldValue.serverTimestamp()});
+        }
+        currentDelivered = plainTxt;
+
+        batch.update(db.collection('products').doc(currentOrderProd.id), { stock: firebase.firestore.FieldValue.increment(-orderQty) });
+        
+        let u = orderQty>=15 ? currentOrderProd.price_bulk : currentOrderProd.price_normal;
+        let oRef = db.collection('orders').doc();
+        batch.set(oRef, {
+            buyerName: document.getElementById('om-name').value,
+            buyerContact: document.getElementById('om-contact').value,
+            buyerUid: currentUser ? currentUser.uid : 'guest',
+            productId: currentOrderProd.id, productName: currentOrderProd.name,
+            qty: orderQty, totalPrice: u*orderQty,
+            accounts: accsData, depositId: currentDepId, status: 'success',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            tutorialType: currentOrderProd.tutorial_type,
+            tutorialContent: currentOrderProd.tutorial_content
+        });
+
+        await batch.commit();
+
+        // Render success UX
+        let listHTML = "";
+        accsData.forEach(a => {
+            listHTML += `<div style="background:rgba(255,255,255,0.03); border-radius:8px; padding:12px; margin-bottom:8px; font-family:monospace;">
+                <div class="flex items-center gap-2 mb-1"><i data-lucide="mail"></i> Email: ${a.email}</div>
+                <div class="flex items-center gap-2"><i data-lucide="key"></i> PW Masuk: <a href="${a.link.startsWith('http')?a.link:'#'}" style="color:#60a5fa;text-decoration:none;">${a.link}</a></div>
+            </div>`;
+        });
+        document.getElementById('om-succ-accs').innerHTML = listHTML;
+        
+        let tc = document.getElementById('om-tut-content'); tc.innerHTML="";
+        let tType = currentOrderProd.tutorial_type; let tVal = currentOrderProd.tutorial_content;
+        if(tType==='text') { tc.innerHTML = `<pre style="background:rgba(255,255,255,0.05); padding:12px; border-radius:8px; white-space:pre-wrap; font-family:'Poppins',sans-serif;">${tVal}</pre>`; }
+        else if(tType==='image') { tc.innerHTML = `<img src="${tVal}" style="max-width:100%; border-radius:12px;">`; }
+        else if(tType==='video') {
+            if(tVal.includes('youtube.com') || tVal.includes('youtu.be')) {
+                let eUrl = tVal.replace("watch?v=", "embed/").replace("youtu.be/", "youtube.com/embed/");
+                tc.innerHTML = `<iframe width="100%" height="200" src="${eUrl}" frameborder="0" style="border-radius:12px;"></iframe>`;
+            } else if(tVal.includes('drive.google.com')) {
+                let eUrl = tVal.replace("/view", "/preview");
+                tc.innerHTML = `<iframe width="100%" height="200" src="${eUrl}" frameborder="0" style="border-radius:12px;"></iframe>`;
+            } else tc.innerHTML = `<video src="${tVal}" controls style="width:100%; border-radius:12px;"></video>`;
+        }
+
+        document.getElementById('om-step-2').classList.add('hidden');
+        document.getElementById('om-step-3').classList.remove('hidden');
+        lucide.createIcons();
+
+    } catch(err) { showToast(err.message, 'error'); }
+    hideLoader();
+}
+
+function copyOmAccs() {
+    navigator.clipboard.writeText(currentDelivered).then(()=>showToast('Berhasil disalin ke clipboard'));
+}
+
+/* ================= PROFILE ================= */
+function loadProfileView() {
+    if(!currentUser) return navigate('login');
+    document.getElementById('prof-ava').innerText = currentUser.fullName ? currentUser.fullName.charAt(0).toUpperCase() : 'U';
+    document.getElementById('prof-name').innerText = currentUser.fullName || 'User';
+    document.getElementById('prof-user').innerText = '@' + (currentUser.username || 'user');
+    
+    document.getElementById('prof-wa-val').innerText = currentUser.whatsapp || '-';
+    document.getElementById('prof-user-val').innerText = currentUser.username || '-';
+    let isA = currentRole==='admin';
+    document.getElementById('prof-role-val').innerHTML = isA ? '<span style="color:#10b981;">Admin</span>' : 'User';
+    
+    // date
+    db.collection('users').doc(currentUser.uid).get().then(d => {
+        if(d.exists && d.data().createdAt) {
+            let m = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+            let dt = d.data().createdAt.toDate();
+            document.getElementById('prof-since').innerText = `Bergabung sejak ${m[dt.getMonth()]} ${dt.getFullYear()}`;
+        }
+    });
+}
+function toggleEditProfile(show) {
+    if(show) {
+        document.getElementById('ep-name').value = currentUser.fullName || '';
+        document.getElementById('ep-user').value = currentUser.username || '';
+        document.getElementById('ep-wa').value = currentUser.whatsapp || '';
+        document.getElementById('prof-edit-form-wrap').classList.remove('hidden');
+        document.getElementById('btn-enter-edit').classList.add('hidden');
+    } else {
+        document.getElementById('prof-edit-form-wrap').classList.add('hidden');
+        document.getElementById('btn-enter-edit').classList.remove('hidden');
+    }
+}
+async function saveProfile(e) {
+    e.preventDefault();
+    let n = document.getElementById('ep-name').value;
+    let u = document.getElementById('ep-user').value;
+    let w = document.getElementById('ep-wa').value;
+    showLoader();
+    try {
+        await db.collection('users').doc(currentUser.uid).update({ fullName:n, username:u, whatsapp:w });
+        showToast('Profil berhasil diperbarui');
+        currentUser.fullName = n; currentUser.username = u; currentUser.whatsapp = w;
+        loadProfileView(); toggleEditProfile(false); updateNav();
+    } catch(err) { showToast(err.message, 'error'); }
+    finally { hideLoader(); }
+}
+
+/* ================= HISTORY ================= */
+async function loadHistory() {
+    if(!currentUser) return;
+    const cont = document.getElementById('history-list');
+    cont.innerHTML = '<div class="text-center p-6"><div class="spinner mx-auto"></div></div>';
+    try {
+        const snap = await db.collection('orders').where('buyerUid','==',currentUser.uid).orderBy('createdAt','desc').get();
+        cont.innerHTML = '';
+        if(snap.empty) {
+            cont.innerHTML = `<div class="text-center" style="padding: 40px;"><div style="font-size:80px; margin-bottom:16px;">📦</div><h3 style="color:white;margin-bottom:8px;">Belum ada pesanan</h3><p style="color:rgba(255,255,255,0.5);">Pesanan Anda akan muncul di sini setelah transaksi berhasil.</p></div>`;
+            return;
+        }
+        snap.forEach(doc => {
+            let o = doc.data();
+            let dt = o.createdAt ? o.createdAt.toDate().toLocaleString('id-ID', {day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '-';
+            
+            // Build hidden detail area
+            let aHtml = ""; let plain="";
+            if(o.accounts) {
+                o.accounts.forEach(a => {
+                    plain += `Email: ${a.email}\nPW Masuk: ${a.link}\n\n`;
+                    aHtml += `<div style="background:rgba(255,255,255,0.03); border-radius:8px; padding:12px; margin-bottom:8px; font-family:monospace;">
+                        <div class="flex items-center gap-2 mb-1"><i data-lucide="mail"></i> Email: ${a.email}</div>
+                        <div class="flex items-center gap-2"><i data-lucide="key"></i> PW Masuk: <a href="${a.link.startsWith('http')?a.link:'#'}" style="color:#60a5fa;text-decoration:none;">${a.link}</a></div>
+                    </div>`;
+                });
+            }
+            
+            let tHtml = "";
+            if(o.tutorialType==='text') tHtml = `<pre style="background:rgba(255,255,255,0.05); padding:16px; border-radius:8px; white-space:pre-wrap; font-family:'Poppins',sans-serif;">${o.tutorialContent}</pre>`;
+            else if(o.tutorialType==='image') tHtml = `<img src="${o.tutorialContent}" style="max-width:100%; border-radius:12px;">`;
+            else if(o.tutorialType==='video') {
+                if(o.tutorialContent.includes('youtube') || o.tutorialContent.includes('youtu.be')) {
+                    let eUrl = o.tutorialContent.replace("watch?v=", "embed/").replace("youtu.be/", "youtube.com/embed/");
+                    tHtml = `<iframe width="100%" height="200" src="${eUrl}" frameborder="0" style="border-radius:12px;"></iframe>`;
+                } else if(o.tutorialContent.includes('drive.google.com')) {
+                    let eUrl = o.tutorialContent.replace("/view", "/preview");
+                    tHtml = `<iframe width="100%" height="200" src="${eUrl}" frameborder="0" style="border-radius:12px;"></iframe>`;
+                } else tHtml = `<video src="${o.tutorialContent}" controls style="width:100%; border-radius:12px;"></video>`;
+            }
+            let cdata = encodeURIComponent(plain);
+
+            let hidId = 'hdet-'+doc.id;
+            cont.innerHTML += `
+                <div class="glass" style="padding: 20px;">
+                    <div class="flex justify-between items-start mb-2">
+                        <span style="font-size:0.8rem; color:rgba(255,255,255,0.5);">${dt}</span>
+                        <span style="background:rgba(16,185,129,0.2); color:#10b981; padding:2px 8px; border-radius:12px; font-size:0.7rem; font-weight:700;">SUCCESS</span>
+                    </div>
+                    <h3 style="font-size:16px; font-weight:700; margin-bottom:8px;">${o.productName}</h3>
+                    <div class="flex items-center gap-2 mb-2" style="font-size:0.9rem;">
+                        <span style="color:rgba(255,255,255,0.7);">Jumlah: ${o.qty} akun</span>
+                        <span style="color:rgba(255,255,255,0.2);">|</span>
+                        <span style="font-weight:600; color:#10b981;">Total: ${formatRp(o.totalPrice)}</span>
+                    </div>
+                    <p style="font-size:0.7rem; color:rgba(255,255,255,0.4); margin-bottom: 16px; font-family:monospace;">ID: ${o.depositId}</p>
+                    <button class="btn btn-secondary w-full" onclick="document.getElementById('${hidId}').classList.toggle('hidden')">Lihat Detail</button>
+                    
+                    <div id="${hidId}" class="hidden mt-4 pt-4" style="border-top:1px solid rgba(255,255,255,0.1);">
+                        <h4 class="flex items-center gap-2 mb-3"><i data-lucide="key" style="color:#7c3aed;"></i> Akun yang Diterima</h4>
+                        ${aHtml}
+                        <button class="btn w-full mt-2 mb-4" style="background:rgba(255,255,255,0.1);" onclick="navigator.clipboard.writeText(decodeURIComponent('${cdata}')).then(()=>showToast('Berhasil disalin'))"><i data-lucide="copy"></i> Copy All</button>
+                        
+                        <h4 style="color:#7c3aed; margin-bottom:8px;">Cara Login:</h4>
+                        ${tHtml}
+                    </div>
+                </div>
+            `;
+        });
+        lucide.createIcons();
+    } catch(e) {}
+}
+
+/* ================= ADMIN FUNCTIONS ================= */
+function switchAdmin(pan) {
+    document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.admin-menu-item').forEach(p => p.classList.remove('active'));
+    document.getElementById('adm-'+pan).classList.add('active');
+    
+    // Highlight sidebar
+    let activeItems = document.querySelectorAll('.admin-menu-item[onclick*="' + pan + '"]');
+    if(activeItems.length > 0) activeItems[0].classList.add('active');
+
+    if(window.innerWidth<=768) { document.getElementById('admin-sidebar').classList.remove('show'); document.getElementById('admin-close-overlay').style.display='none'; }
+    if(pan==='dashboard') loadAdmDash();
+    if(pan==='products') loadAdmProducts();
+    if(pan==='orders') loadAdmOrders();
+    if(pan==='harga') loadAdmHarga();
+}
+function loadAdminData() { switchAdmin('dashboard'); }
+
+async function loadAdmDash() {
+    try {
+        const pSnap = await db.collection('products').get();
+        document.getElementById('adm-stat-prod').innerText = pSnap.size;
+        let ts=0; pSnap.forEach(d=>ts+=d.data().stock); document.getElementById('adm-stat-stok').innerText=ts;
+        const oSnap = await db.collection('orders').get(); document.getElementById('adm-stat-order').innerText=oSnap.size;
+        
+        // table
+        const rSnap = await db.collection('orders').orderBy('createdAt','desc').limit(5).get();
+        let tbody = document.getElementById('adm-recent-orders'); tbody.innerHTML='';
+        if(rSnap.empty) tbody.innerHTML='<tr><td colspan="5" class="text-center">Belum ada order.</td></tr>';
+        rSnap.forEach(d=>{
+            let o=d.data();
+            let dt=o.createdAt?o.createdAt.toDate().toLocaleString('id-ID',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'-';
+            tbody.innerHTML+=`<tr><td>${dt}</td><td>${o.buyerName}</td><td>${o.productName}</td><td style="color:#10b981;font-weight:600;">${formatRp(o.totalPrice)}</td><td><span style="background:rgba(16,185,129,0.2);color:#10b981;padding:2px 8px;border-radius:10px;font-size:0.7rem;">${o.status.toUpperCase()}</span></td></tr>`;
+        });
+        
+        loadSaldo(false);
+    } catch(e){}
+}
+async function loadSaldo(force=false) {
+    if(force) showLoader("Refresh saldo...");
+    try { const res = await callApi('/balance', {}); if(res && res.balance!==undefined) {
+        document.getElementById('adm-stat-saldo').innerText = formatRp(res.balance);
+        document.getElementById('saldo-val-big').innerText = formatRp(res.balance);
+        let n=new Date(); document.getElementById('saldo-time').innerText = "Terakhir dicek: "+n.toLocaleTimeString('id-ID');
+        if(force) showToast('Berhasil refresh saldo');
+    } } catch(e) {}
+    if(force) hideLoader();
+}
+
+let admProdUnsub = null;
+function loadAdmProducts() {
+    if(admProdUnsub) admProdUnsub();
+    admProdUnsub = db.collection('products').onSnapshot(snap => {
+        let cont = document.getElementById('adm-prod-grid'); cont.innerHTML='';
+        if(snap.empty) { cont.innerHTML='<p class="text-center w-full mt-6" style="color:rgba(255,255,255,0.5)">Belum ada produk.</p>'; return; }
+        snap.forEach(doc => {
+            let p=doc.data();
+            let pId=doc.id;
+            let col = p.stock>0 ? '#10b981':'#ef4444';
+            cont.innerHTML += `
+                <div class="glass" style="padding:20px; display:flex; flex-direction:column; gap:12px;">
+                    <h3 style="font-size:1.1rem;">${p.name}</h3>
+                    <div class="flex items-center gap-2"><span style="background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:8px; font-size:0.75rem;"><span style="color:${col}; font-weight:700;">${p.stock}</span> Stok</span> <span style="background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(37,99,235,0.1)); border:1px solid rgba(124,58,237,0.3); padding:4px 8px; border-radius:8px; font-size:0.75rem; text-transform:capitalize;">Tutorial ${p.tutorial_type}</span></div>
+                    <div>
+                        <p style="font-size:0.8rem; color:rgba(255,255,255,0.6);">Normal: <span style="color:white;font-weight:600;">${formatRp(p.price_normal)}</span></p>
+                        <p style="font-size:0.8rem; color:rgba(255,255,255,0.6);">Bulk: <span style="color:#f59e0b;font-weight:600;">${formatRp(p.price_bulk)}</span></p>
+                    </div>
+                    <div style="flex:1;"></div>
+                    <div class="flex gap-2">
+                        <button class="btn btn-primary w-full" style="padding:10px; font-size:0.85rem; background:linear-gradient(135deg,#60a5fa,#1d4ed8);" onclick="openTS('${pId}','${p.name}')"><i data-lucide="plus"></i> Stok</button>
+                        <button class="btn btn-danger-outline w-full" style="padding:10px; font-size:0.85rem;" onclick="openDel('${pId}','${p.stock}')"><i data-lucide="trash-2"></i> Hapus</button>
+                    </div>
+                </div>
+            `;
+        });
+        lucide.createIcons();
+    });
+}
+
+// Tambah Produk
+let actType = 'text';
+function setTutorialType(t) {
+    actType = t;
+    document.querySelectorAll('.radio-card').forEach(c=>c.classList.remove('active'));
+    document.getElementById('rt-'+t).classList.add('active');
+    document.getElementById('ap-tut-text').classList.add('hidden');
+    document.getElementById('ap-tut-img').classList.add('hidden');
+    document.getElementById('ap-tut-vid').classList.add('hidden');
+    if(t==='text') document.getElementById('ap-tut-text').classList.remove('hidden');
+    if(t==='image') document.getElementById('ap-tut-img').classList.remove('hidden');
+    if(t==='video') document.getElementById('ap-tut-vid').classList.remove('hidden');
+    lucide.createIcons();
+}
+function previewImg(inp, id) {
+    if(inp.files && inp.files[0]) {
+        let r=new FileReader(); r.onload=function(e){ let im=document.getElementById(id); im.src=e.target.result; im.classList.remove('hidden');}
+        r.readAsDataURL(inp.files[0]);
+    }
+}
+function previewText(inp, id) { if(inp.files && inp.files[0]) document.getElementById(id).innerText = inp.files[0].name; }
+
+let apRows = 0;
+function addApRow() {
+    apRows++;
+    let div = document.createElement('div');
+    div.className = 'flex gap-2 mb-2 items-center ap-row'; div.id='apr-'+apRows;
+    div.innerHTML = `<div style="width:40px; text-align:center; color:rgba(255,255,255,0.4); font-size:0.9rem; font-weight:600;">${apRows}</div><input type="text" class="input flex-1 e-val" placeholder="Email"><input type="text" class="input flex-1 l-val" placeholder="Link/Pass"><button type="button" class="btn" style="background:rgba(239,68,68,0.2); color:#ef4444; width:40px; height:45px; border-radius:12px;" onclick="delApRow('${div.id}')"><i data-lucide="x"></i></button>`;
+    document.getElementById('ap-rows').appendChild(div);
+    document.getElementById('ap-acc-count').innerText = document.querySelectorAll('.ap-row').length;
+    lucide.createIcons();
+}
+function delApRow(id) { document.getElementById(id).remove(); document.getElementById('ap-acc-count').innerText = document.querySelectorAll('.ap-row').length; }
+for(let i=0;i<3;i++) addApRow();
+
+async function submitNewProduct(e) {
+    e.preventDefault();
+    let btn = document.getElementById('btn-ap-save'); btn.disabled=true;
+    showLoader("Menyimpan produk...");
+    try {
+        let n = document.getElementById('ap-name').value.trim();
+        let pN = Number(document.getElementById('ap-normal').value);
+        let pB = Number(document.getElementById('ap-bulk').value);
+        if(!n) throw new Error("Nama harus diisi");
+        if(isNaN(pN) || pN<=0 || isNaN(pB) || pB<=0) throw new Error("Harga tidak valid");
+
+        let validRows=[];
+        document.querySelectorAll('.ap-row').forEach(r=>{
+            let e=r.querySelector('.e-val').value.trim(); let l=r.querySelector('.l-val').value.trim();
+            if(e && l) validRows.push({email:e,link:l,sold:false,sold_at:null,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        });
+        if(validRows.length===0) throw new Error("Minimal masukkan 1 akun (Email dan Link/Password)");
+
+        let tutC = "";
+        if(actType==='text') tutC = document.getElementById('ap-text-val').value;
+        else if(actType==='image') {
+            let f = document.getElementById('ap-file-img').files[0];
+            if(f) { let r=storage.ref('tutorials/'+Date.now()+'_img'); await r.put(f); tutC = await r.getDownloadURL(); }
+        } else if(actType==='video') {
+            let f = document.getElementById('ap-file-vid').files[0]; let lv = document.getElementById('ap-link-vid').value.trim();
+            if(f) { let r=storage.ref('tutorials/'+Date.now()+'_vid'); await r.put(f); tutC = await r.getDownloadURL(); }
+            else if(lv) tutC = lv;
+        }
+
+        const dR = await db.collection('products').add({ name:n, price_normal:pN, price_bulk:pB, stock:0, tutorial_type:actType, tutorial_content:tutC, createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        
+        for(let i=0;i<validRows.length;i++) {
+            await db.collection('products').doc(dR.id).collection('accounts').add(validRows[i]);
+        }
+        await db.collection('products').doc(dR.id).update({stock: validRows.length});
+
+        showToast(`Produk berhasil ditambahkan dengan ${validRows.length} akun`);
+        document.getElementById('ap-name').value=''; document.getElementById('ap-normal').value='5500'; document.getElementById('ap-bulk').value='700'; document.getElementById('ap-text-val').value=''; document.getElementById('ap-link-vid').value=''; document.getElementById('ap-rows').innerHTML=''; apRows=0; for(let i=0;i<3;i++) addApRow();
+    } catch(err) { showToast(err.message, 'error'); console.error(err); }
+    finally { btn.disabled=false; hideLoader(); }
+}
+
+let currTsId = null; let tsRC = 0;
+function openTS(id, name) {
+    currTsId = id; document.getElementById('ts-title').innerText = "Tambah Stok - " + name;
+    document.getElementById('ts-rows').innerHTML=''; tsRC=0; addTsRow();
+    showModal('tambah-stok-modal');
+}
+function addTsRow() {
+    if(tsRC>=50) return showToast('Maksimal 50 baris sekaligus.', 'error');
+    tsRC++; let div=document.createElement('div'); div.className='flex gap-2 mb-2 items-center tsr'; div.id='tsr-'+tsRC;
+    div.innerHTML = `<input type="text" class="input flex-1 t-e" placeholder="Email"><input type="text" class="input flex-1 t-l" placeholder="Link/Pass"><button class="btn" style="background:transparent; color:#ef4444;" onclick="document.getElementById('${div.id}').remove(); tsRC--;"><i data-lucide="x"></i></button>`;
+    document.getElementById('ts-rows').appendChild(div); lucide.createIcons();
+}
+async function saveStok() {
+    let btn = document.getElementById('btn-ts-save'); btn.disabled=true; showLoader("Menyimpan...");
+    try {
+        let rows = []; document.querySelectorAll('.tsr').forEach(r=>{
+            let e=r.querySelector('.t-e').value.trim(); let l=r.querySelector('.t-l').value.trim();
+            if(e && l) rows.push({email:e, link:l, sold:false, sold_at:null, createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        });
+        if(rows.length===0) throw new Error("Tidak ada akun valid yang dimasukkan.");
+        
+        for(let i=0;i<rows.length;i++) await db.collection('products').doc(currTsId).collection('accounts').add(rows[i]);
+        await db.collection('products').doc(currTsId).update({ stock: firebase.firestore.FieldValue.increment(rows.length) });
+        showToast(`Berhasil menambah ${rows.length} akun baru`);
+        hideModal('tambah-stok-modal');
+    } catch(err) { showToast(err.message, 'error'); }
+    finally { btn.disabled=false; hideLoader(); }
+}
+
+let currDelId = null;
+function openDel(id, stok) {
+    currDelId = id; document.getElementById('cm-text').innerText = `Tindakan ini akan menghapus produk dan semua ${stok} akun di dalamnya secara permanen. Tidak dapat dibatalkan.`;
+    showModal('confirm-modal');
+}
+document.getElementById('btn-cm-confirm').onclick = async () => {
+    hideModal('confirm-modal'); showLoader("Menghapus produk...");
+    try {
+        const as = await db.collection('products').doc(currDelId).collection('accounts').get();
+        for(let i=0;i<as.docs.length;i++) await as.docs[i].ref.delete();
+        await db.collection('products').doc(currDelId).delete();
+        showToast('Produk berhasil dihapus');
+    } catch(err) { showToast(err.message, 'error'); }
+    finally { hideLoader(); }
+};
+
+let admOrdUnsub = null;
+function loadAdmOrders() {
+    if(admOrdUnsub) admOrdUnsub();
+    admOrdUnsub = db.collection('orders').orderBy('createdAt','desc').onSnapshot(snap => {
+        let cont = document.getElementById('adm-order-list'); cont.innerHTML=''; document.getElementById('adm-all-ord-count').innerText=snap.size;
+        if(snap.empty) { cont.innerHTML='<p class="text-center w-full mt-6" style="color:rgba(255,255,255,0.5)">Belum ada order.</p>'; return; }
+        snap.forEach(doc => {
+            let o=doc.data();
+            let dt=o.createdAt?o.createdAt.toDate().toLocaleString('id-ID',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}):'-';
+            let hidId = 'adm-det-'+doc.id;
+            let aHtml="";if(o.accounts) o.accounts.forEach(a=>{ aHtml+=`<div style="background:rgba(255,255,255,0.03); border-radius:8px; padding:12px; margin-bottom:8px; font-family:monospace; font-size:0.8rem;"><div class="mb-1">E: ${a.email}</div><div>P: ${a.link}</div></div>`; });
+            cont.innerHTML += `
+                <div class="glass" style="padding: 20px;">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <span style="font-size:0.8rem; color:rgba(255,255,255,0.5); display:block; margin-bottom:4px;">${dt}</span>
+                            <span style="font-size:0.7rem; color:rgba(255,255,255,0.3); font-family:monospace;">${doc.id} | Dep: ${o.depositId}</span>
+                        </div>
+                        <span style="background:rgba(16,185,129,0.2); color:#10b981; padding:2px 8px; border-radius:12px; font-size:0.7rem; font-weight:700;">${o.status.toUpperCase()}</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+                        <div>
+                            <p style="font-size:0.75rem; color:rgba(255,255,255,0.5); margin-bottom:2px;">Pembeli</p>
+                            <p style="font-weight:600; font-size:0.9rem;">${o.buyerName}</p>
+                            <p style="font-size:0.8rem; color:rgba(255,255,255,0.6);">${o.buyerContact}</p>
+                        </div>
+                        <div>
+                            <p style="font-size:0.75rem; color:rgba(255,255,255,0.5); margin-bottom:2px;">Item</p>
+                            <p style="font-weight:600; font-size:0.9rem;">${o.productName}</p>
+                            <p style="font-size:0.8rem; color:#10b981; font-weight:600;">${o.qty} akun — ${formatRp(o.totalPrice)}</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary w-full" style="padding:10px; font-size:0.85rem;" onclick="document.getElementById('${hidId}').classList.toggle('hidden')">Lihat Akun & Detail</button>
+                    <div id="${hidId}" class="hidden mt-4 pt-4" style="border-top:1px solid rgba(255,255,255,0.1);">${aHtml}</div>
+                </div>
+            `;
+        });
+        lucide.createIcons();
+    });
+}
+
+function loadAdmHarga() {
+    let cont = document.getElementById('adm-harga-grid'); cont.innerHTML='';
+    db.collection('products').get().then(snap => {
+        if(snap.empty) { cont.innerHTML='<p style="color:rgba(255,255,255,0.5)">Belum ada produk.</p>'; return; }
+        snap.forEach(doc=>{
+            let p=doc.data();
+            cont.innerHTML += `
+                <div class="glass" style="padding:20px;">
+                    <h3 style="font-size:1.1rem; margin-bottom:16px;">${p.name}</h3>
+                    <div class="flex gap-4 mb-4">
+                        <div class="w-full">
+                            <label>Normal</label>
+                            <input type="number" id="ehn-${doc.id}" class="input" value="${p.price_normal}">
+                        </div>
+                        <div class="w-full">
+                            <label>Bulk</label>
+                            <input type="number" id="ehb-${doc.id}" class="input" value="${p.price_bulk}">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary w-full" onclick="saveHarga('${doc.id}')">Simpan Harga</button>
+                </div>
+            `;
+        });
+    });
+}
+async function saveHarga(id) {
+    let n=Number(document.getElementById('ehn-'+id).value); let b=Number(document.getElementById('ehb-'+id).value);
+    showLoader("Menyimpan...");
+    try {
+        await db.collection('products').doc(id).update({price_normal:n, price_bulk:b});
+        showToast('Harga berhasil diubah');
+    } catch(e){ showToast(e.message,'error'); }
+    hideLoader();
+}
+
+</script>
+</body>
+</html>
 
