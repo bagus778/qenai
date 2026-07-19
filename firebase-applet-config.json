@@ -1,1 +1,10 @@
-
+{
+  "projectId": "qenai",
+  "appId": "1:812349114314:web:52cc77d1d806ffec223133",
+  "apiKey": "AIzaSyB2NhU6ECMyzV2aJNG1kjeVIXiN2TqKPto",
+  "authDomain": "qenai.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "qenai.firebasestorage.app",
+  "messagingSenderId": "812349114314",
+  "measurementId": "G-NJWYG8GHFP"
+}
