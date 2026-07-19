@@ -1,1 +1,435 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panduan Setup Firebase - Sanz Store</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --accent-grad: linear-gradient(135deg, #7c3aed, #2563eb);
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --code-bg: #1e1e2e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+    .container {
+      max-width: 720px;
+      width: 100%;
+    }
+    .glass-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 1.5rem;
+      padding: 2.5rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+    .progress-container { margin-bottom: 2.5rem; }
+    .step-text { text-align: center; font-weight: 600; font-size: 0.95rem; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 1px; text-transform: uppercase; }
+    .dots { display: flex; justify-content: center; gap: 0.75rem; margin-bottom: 1rem; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,0.1); transition: all 0.3s; }
+    .dot.active { background: #7c3aed; box-shadow: 0 0 12px rgba(124, 58, 237, 0.6); transform: scale(1.2); }
+    .dot.completed { background: #2563eb; }
+    .progress-bar-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: var(--accent-grad); transition: width 0.4s ease; width: 0%; }
+    .step { display: none; animation: fadeIn 0.4s ease forwards; }
+    .step.active { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    h2 { font-size: 1.8rem; margin-bottom: 0.75rem; color: #fff; font-weight: 700; line-height: 1.2; }
+    .subtitle { color: var(--text-muted); margin-bottom: 2rem; font-size: 1rem; line-height: 1.6; }
+    .btn {
+      background: var(--accent-grad);
+      color: #fff;
+      border: none;
+      padding: 0.85rem 1.75rem;
+      border-radius: 0.75rem;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+    .btn:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4); }
+    .btn-outline { background: transparent; border: 1px solid var(--text-muted); color: var(--text-main); }
+    .btn-outline:hover { background: rgba(255,255,255,0.08); box-shadow: none; border-color: #fff; }
+    ol { margin-left: 1.5rem; margin-top: 1.5rem; margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.85rem; }
+    li { line-height: 1.6; color: #cbd5e1; font-size: 1.05rem; }
+    li strong { color: #fff; font-weight: 600; }
+    .code-container {
+      background: var(--code-bg);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      position: relative;
+      margin-top: 1rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+    }
+    .code-container pre {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.9rem;
+      color: #a6accd;
+      overflow-x: auto;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #fff;
+      padding: 0.35rem 0.85rem;
+      font-size: 0.8rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+    }
+    .copy-btn:hover { background: rgba(255,255,255,0.2); }
+    textarea {
+      width: 100%;
+      height: 160px;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--glass-border);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      color: #fff;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.9rem;
+      resize: vertical;
+      margin-top: 1.5rem;
+      margin-bottom: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+    }
+    textarea:focus { border-color: #7c3aed; }
+    .actions { display: flex; justify-content: space-between; align-items: center; margin-top: 2.5rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem; }
+    .actions .next-btn { margin-left: auto; }
+    .success-alert { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.4); color: #4ade80; padding: 1rem; border-radius: 0.75rem; margin-top: 1.5rem; font-weight: 500; display: none; }
+    
+    @media (max-width: 600px) {
+      .glass-card { padding: 1.5rem; }
+      h2 { font-size: 1.5rem; }
+      .actions { flex-direction: column-reverse; gap: 1rem; }
+      .actions .btn { width: 100%; margin: 0 !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="glass-card">
+    
+    <div class="progress-container">
+      <div class="step-text" id="step-indicator-text">Step 1 of 7</div>
+      <div class="dots" id="dots-container">
+        <div class="dot active" id="dot-1"></div>
+        <div class="dot" id="dot-2"></div>
+        <div class="dot" id="dot-3"></div>
+        <div class="dot" id="dot-4"></div>
+        <div class="dot" id="dot-5"></div>
+        <div class="dot" id="dot-6"></div>
+        <div class="dot" id="dot-7"></div>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="step active" id="step-1">
+      <h2>Buat Project Firebase Baru</h2>
+      <p class="subtitle">Buka link ini di tab baru lalu ikuti instruksi berikut.</p>
+      
+      <a href="https://console.firebase.google.com" target="_blank" class="btn">Buka Firebase Console</a>
+      
+      <ol>
+        <li>Klik tombol <strong>Add Project</strong> atau <strong>Tambahkan Project</strong></li>
+        <li>Isi nama project dengan: <strong>sanz-store</strong></li>
+        <li>Matikan <strong>Google Analytics</strong> karena tidak diperlukan</li>
+        <li>Klik <strong>Create Project</strong> dan tunggu hingga selesai</li>
+        <li>Setelah selesai klik <strong>Continue</strong></li>
+      </ol>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step" id="step-2">
+      <h2>Aktifkan Firestore Database</h2>
+      <p class="subtitle">Sekarang aktifkan database Firestore untuk menyimpan data produk dan order.</p>
+      
+      <a href="https://console.firebase.google.com" target="_blank" class="btn btn-outline">Buka Firebase Console</a>
+      
+      <ol>
+        <li>Di sidebar kiri klik menu <strong>Build</strong></li>
+        <li>Klik <strong>Firestore Database</strong></li>
+        <li>Klik tombol <strong>Create Database</strong></li>
+        <li>Pilih <strong>Start in Test Mode</strong> agar tidak ada error permission</li>
+        <li>Pilih region <strong>asia-southeast1</strong> yang paling dekat dengan Indonesia</li>
+        <li>Klik <strong>Enable</strong> dan tunggu hingga database selesai dibuat</li>
+      </ol>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step" id="step-3">
+      <h2>Aktifkan Firebase Storage</h2>
+      <p class="subtitle">Aktifkan Storage untuk menyimpan foto dan video tutorial produk.</p>
+      
+      <a href="https://console.firebase.google.com" target="_blank" class="btn btn-outline">Buka Firebase Console</a>
+      
+      <ol>
+        <li>Di sidebar kiri klik menu <strong>Build</strong></li>
+        <li>Klik <strong>Storage</strong></li>
+        <li>Klik tombol <strong>Get Started</strong></li>
+        <li>Pilih <strong>Start in Test Mode</strong></li>
+        <li>Pilih region <strong>asia-southeast1</strong></li>
+        <li>Klik <strong>Done</strong> dan tunggu hingga selesai</li>
+      </ol>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step" id="step-4">
+      <h2>Daftarkan Web App dan Salin Config</h2>
+      <p class="subtitle">Daftarkan aplikasi web untuk mendapatkan konfigurasi Firebase.</p>
+      
+      <a href="https://console.firebase.google.com" target="_blank" class="btn btn-outline">Buka Firebase Console</a>
+      
+      <ol>
+        <li>Di halaman utama project klik ikon web yang berbentuk tanda lebih dari dan kurang dari <strong>&lt;/&gt;</strong></li>
+        <li>Isi App nickname dengan: <strong>sanz-store-web</strong></li>
+        <li>Jangan centang <strong>Firebase Hosting</strong></li>
+        <li>Klik <strong>Register App</strong></li>
+        <li>Salin seluruh isi <strong>firebaseConfig</strong> yang muncul</li>
+        <li>Tempel di kotak input di bawah ini</li>
+      </ol>
+
+      <textarea id="config-input" placeholder="Tempel snippet const firebaseConfig = { ... } di sini"></textarea>
+      <button class="btn" style="width: 100%" onclick="saveConfig()">Simpan Config</button>
+      <div id="config-success-alert" class="success-alert"></div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="step" id="step-5">
+      <h2>Set Firestore Security Rules</h2>
+      <p class="subtitle">Atur rules Firestore agar website bisa membaca dan menulis data.</p>
+      
+      <a href="https://console.firebase.google.com" target="_blank" class="btn btn-outline">Buka Firebase Console</a>
+      
+      <ol>
+        <li>Di Firebase Console buka <strong>Firestore Database</strong></li>
+        <li>Klik tab <strong>Rules</strong> di bagian atas</li>
+        <li>Hapus semua rules yang ada</li>
+        <li>Salin rules di bawah ini dan tempel di editor rules</li>
+      </ol>
+
+      <div class="code-container">
+        <button class="copy-btn" onclick="copyCode(this, 'code-firestore-rules')">Copy</button>
+        <pre id="code-firestore-rules">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}</pre>
+      </div>
+
+      <ol start="5">
+        <li>Klik <strong>Publish</strong> dan tunggu hingga tersimpan</li>
+      </ol>
+    </div>
+
+    <!-- Step 6 -->
+    <div class="step" id="step-6">
+      <h2>Set Storage Security Rules</h2>
+      <p class="subtitle">Atur rules Storage agar website bisa upload dan mengambil file.</p>
+      
+      <a href="https://console.firebase.google.com" target="_blank" class="btn btn-outline">Buka Firebase Console</a>
+      
+      <ol>
+        <li>Di Firebase Console buka <strong>Storage</strong></li>
+        <li>Klik tab <strong>Rules</strong> di bagian atas</li>
+        <li>Hapus semua rules yang ada</li>
+        <li>Salin rules di bawah ini dan tempel di editor rules</li>
+      </ol>
+
+      <div class="code-container">
+        <button class="copy-btn" onclick="copyCode(this, 'code-storage-rules')">Copy</button>
+        <pre id="code-storage-rules">rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if true;
+    }
+  }
+}</pre>
+      </div>
+
+      <ol start="5">
+        <li>Klik <strong>Publish</strong> dan tunggu hingga tersimpan</li>
+      </ol>
+    </div>
+
+    <!-- Step 7 -->
+    <div class="step" id="step-7">
+      <h2>Firebase Siap Digunakan</h2>
+      <p class="subtitle">Selamat setup Firebase kamu sudah selesai. Berikut adalah firebaseConfig yang sudah kamu simpan tadi.</p>
+      
+      <div class="code-container">
+        <button class="copy-btn" onclick="copyCode(this, 'final-config-code')">Copy</button>
+        <pre id="final-config-code">// Memuat...</pre>
+      </div>
+
+      <div class="success-alert" style="display: block; margin-top: 1.5rem;">
+        Salin config di atas dan tempel ke dalam file HTML Sanz Store kamu pada bagian yang bertuliskan config Firebase.
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button id="prev-btn" class="btn btn-outline prev-btn" onclick="prevStep()" style="display: none;">Previous</button>
+      <button id="next-btn" class="btn next-btn" onclick="nextStep()">Next Step</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let currentStep = 1;
+  const totalSteps = 7;
+
+  function updateUI() {
+    for(let i=1; i<=totalSteps; i++) {
+      const dot = document.getElementById('dot-' + i);
+      dot.className = 'dot' + (i === currentStep ? ' active' : (i < currentStep ? ' completed' : ''));
+    }
+    const pct = ((currentStep - 1) / (totalSteps - 1)) * 100;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('step-indicator-text').innerText = `Step ${currentStep} of ${totalSteps}`;
+
+    document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+    document.getElementById('step-' + currentStep).classList.add('active');
+
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    
+    if (currentStep === 1) {
+      prevBtn.style.display = 'none';
+    } else {
+      prevBtn.style.display = 'inline-block';
+    }
+    
+    if (currentStep === totalSteps) {
+      nextBtn.style.display = 'none';
+    } else {
+      nextBtn.style.display = 'inline-block';
+    }
+
+    if (currentStep === 7) {
+      renderFinalConfig();
+    }
+  }
+
+  function nextStep() {
+    if (currentStep < totalSteps) {
+      currentStep++;
+      updateUI();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  function prevStep() {
+    if (currentStep > 1) {
+      currentStep--;
+      updateUI();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  function copyCode(btn, elementId) {
+    const text = document.getElementById(elementId).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const oldText = btn.innerText;
+      btn.innerText = 'Tersalin!';
+      setTimeout(() => { btn.innerText = oldText; }, 2000);
+    });
+  }
+
+  function saveConfig() {
+    const text = document.getElementById('config-input').value;
+    const config = {};
+    const keys = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
+    let count = 0;
+    
+    keys.forEach(key => {
+      const regex = new RegExp(`['"]?${key}['"]?\\s*:\\s*['"\`]([^'"\`]+)['"\`]`);
+      const match = text.match(regex);
+      if(match && match[1]) {
+        config[key] = match[1];
+        count++;
+      }
+    });
+
+    if (count > 0) {
+      localStorage.setItem('sanzFirebaseConfig', JSON.stringify(config));
+      const alert = document.getElementById('config-success-alert');
+      alert.style.display = 'block';
+      alert.innerText = 'Config berhasil disimpan! Silakan klik Next Step.';
+      setTimeout(() => { alert.style.display = 'none'; }, 3000);
+    } else {
+      alert('Format tidak dikenali. Pastikan menyalin seluruh bagian firebaseConfig yang berisi apiKey, projectId, dll.');
+    }
+  }
+
+  function renderFinalConfig() {
+    const saved = localStorage.getItem('sanzFirebaseConfig');
+    const codeEl = document.getElementById('final-config-code');
+    if(saved) {
+      try {
+        const config = JSON.parse(saved);
+        const str = `const firebaseConfig = {
+  apiKey: "${config.apiKey || ''}",
+  authDomain: "${config.authDomain || ''}",
+  projectId: "${config.projectId || ''}",
+  storageBucket: "${config.storageBucket || ''}",
+  messagingSenderId: "${config.messagingSenderId || ''}",
+  appId: "${config.appId || ''}"
+};`;
+        codeEl.textContent = str;
+      } catch(e) {
+        codeEl.textContent = '// Error reading config from storage.'
+      }
+    } else {
+      codeEl.textContent = '// Config belum disimpan. Silakan kembali ke Step 4.';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', updateUI);
+</script>
+</body>
+</html>
 
